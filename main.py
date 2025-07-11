@@ -1,8 +1,20 @@
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.lib.utils import ImageReader
-import pandas as pd
+from reportlab.lib.colors import HexColor
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 import os
+
+# Try to register the Mistrully cursive font
+try:
+    pdfmetrics.registerFont(TTFont('Mistrully', 'fonts/Mistrully.ttf'))
+    SIGNATURE_FONT = 'Mistrully'
+    SIGNATURE_FONT_SIZE = 40
+except:
+    # Fallback to italic Times
+    SIGNATURE_FONT = 'Times-Italic'
+    SIGNATURE_FONT_SIZE = 24
 
 # Certificate details
 COURSE_NAME = "Klever Blockchain: Construindo Smart Contracts na Prática"
@@ -13,7 +25,6 @@ PROFESSOR_TITLE = "Klever Blockchain Leader"
 UNIFOR_LOGO_PATH = "./images/unifor.png"
 KLEVER_LOGO_PATH = "./images/klever.png"
 BACKGROUND_PATH = "./images/background.png"
-SIGNATURE_PATH = "./images/signature.png"  # Add instructor signature image
 
 # Load student names (replace this list or load from a CSV)
 students = ["Fernando Sobreira", "João Beroni"]
@@ -63,11 +74,15 @@ for student in students:
     line_end_x = width / 2 + 150
     c.line(line_start_x, signature_y, line_end_x, signature_y)
     
-    # Signature image (if exists) - larger size and more space
-    if os.path.exists(SIGNATURE_PATH):
-        c.drawImage(SIGNATURE_PATH, width / 2 - 100, signature_y - 25, width=200, height=80, preserveAspectRatio=True, mask='auto')
+    # Draw signature using font
+    c.setFont(SIGNATURE_FONT, SIGNATURE_FONT_SIZE)
+    c.setFillColor(HexColor('#000080'))  # Navy blue
+    c.drawCentredString(width / 2, signature_y + 5, PROFESSOR_NAME)
     
-    # Instructor name and title below line - moved down for more space
+    # Reset color to black for name and title
+    c.setFillColor(HexColor('#000000'))
+    
+    # Instructor name and title below line
     c.setFont("Helvetica-Bold", 14)
     c.drawCentredString(width / 2, signature_y - 25, PROFESSOR_NAME)
     c.setFont("Helvetica", 12)
