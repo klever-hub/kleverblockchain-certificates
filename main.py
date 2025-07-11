@@ -8,6 +8,36 @@ import os
 import csv
 import qrcode
 from io import BytesIO
+import argparse
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if exists
+load_dotenv()
+
+# Set up argument parser
+parser = argparse.ArgumentParser(description='Generate NFT certificates for Klever Blockchain courses')
+parser.add_argument('--course-name', default=os.getenv('COURSE_NAME', 'Klever Blockchain: Construindo Smart Contracts na Prática'),
+                    help='Name of the course')
+parser.add_argument('--course-load', default=os.getenv('COURSE_LOAD', '12 horas'),
+                    help='Course duration/load')
+parser.add_argument('--location', default=os.getenv('LOCATION', 'Universidade de Fortaleza (UNIFOR)'),
+                    help='Location where the course was held')
+parser.add_argument('--location-date', default=os.getenv('LOCATION_DATE', 'Fortaleza, Julho de 2025'),
+                    help='City and date of the course')
+parser.add_argument('--professor-name', default=os.getenv('PROFESSOR_NAME', 'Nicollas Gabriel'),
+                    help='Name of the instructor')
+parser.add_argument('--professor-title', default=os.getenv('PROFESSOR_TITLE', 'Klever Blockchain Leader'),
+                    help='Title of the instructor')
+parser.add_argument('--nft-ticker', default=os.getenv('NFT_TICKER', 'KLVCERT-ABC'),
+                    help='NFT collection ticker')
+parser.add_argument('--nft-starting-nonce', type=int, default=int(os.getenv('NFT_STARTING_NONCE', '1')),
+                    help='Starting nonce for NFT IDs')
+parser.add_argument('--students-csv', default=os.getenv('STUDENTS_CSV', 'students.csv'),
+                    help='Path to CSV file with student names')
+parser.add_argument('--output-dir', default=os.getenv('OUTPUT_DIR', 'certificates'),
+                    help='Output directory for certificates')
+
+args = parser.parse_args()
 
 # Try to register the Mistrully cursive font
 try:
@@ -19,17 +49,19 @@ except:
     SIGNATURE_FONT = 'Times-Italic'
     SIGNATURE_FONT_SIZE = 24
 
-# NFT Configuration
-NFT_TICKER = "KLVCERT-ABC"  # NFT Collection ticker
-NFT_STARTING_NONCE = 1  # Starting nonce for NFT IDs
+# Use arguments
+COURSE_NAME = args.course_name
+COURSE_LOAD = args.course_load
+LOCATION = args.location
+LOCATION_DATE = args.location_date
+PROFESSOR_NAME = args.professor_name
+PROFESSOR_TITLE = args.professor_title
+NFT_TICKER = args.nft_ticker
+NFT_STARTING_NONCE = args.nft_starting_nonce
+STUDENTS_CSV = args.students_csv
+OUTPUT_DIR = args.output_dir
 
-# Certificate details
-COURSE_NAME = "Klever Blockchain: Construindo Smart Contracts na Prática"
-COURSE_LOAD = "12 horas"
-LOCATION = "Universidade de Fortaleza (UNIFOR)"
-LOCATION_DATE = "Fortaleza, Julho de 2025"
-PROFESSOR_NAME = "Nicollas Gabriel"
-PROFESSOR_TITLE = "Klever Blockchain Leader"
+# Fixed paths for logos and background
 UNIFOR_LOGO_PATH = "./images/unifor.png"
 KLEVER_LOGO_PATH = "./images/klever.png"
 BACKGROUND_PATH = "./images/background.png"
@@ -37,10 +69,9 @@ BACKGROUND_PATH = "./images/background.png"
 # Load student names
 def load_students():
     """Load students from CSV file if exists, otherwise use default list"""
-    csv_file = "students.csv"
-    if os.path.exists(csv_file):
+    if os.path.exists(STUDENTS_CSV):
         students = []
-        with open(csv_file, 'r', encoding='utf-8') as f:
+        with open(STUDENTS_CSV, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             next(reader, None)  # Skip header if exists
             for row in reader:
@@ -48,8 +79,8 @@ def load_students():
                     students.append(row[0])
         return students
     else:
-        # throw error loading students
-        print(f"⚠️ Warning: {csv_file} not found! Using default student list.")
+        print(f"⚠️ Warning: {STUDENTS_CSV} not found!")
+        print("Please create a CSV file with student names or specify a different file with --students-csv")
         return []
 
 def generate_qr_code(data):
@@ -129,12 +160,16 @@ def generate_qr_code(data):
 
 students = load_students()
 
+if not students:
+    print("\n❌ No students found. Exiting.")
+    exit(1)
+
 # Output directory
-os.makedirs("certificates", exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Generate certificates
 for idx, student in enumerate(students):
-    output_file = f"certificates/{student.replace(' ', '_')}_certificate.pdf"
+    output_file = f"{OUTPUT_DIR}/{student.replace(' ', '_')}_certificate.pdf"
     c = canvas.Canvas(output_file, pagesize=landscape(A4))
     width, height = landscape(A4)
     
@@ -255,13 +290,24 @@ for idx, student in enumerate(students):
     print(f"✓ Certificate generated for {student}: {output_file} (NFT: {nft_id})")
 
 # Create sample students.csv if it doesn't exist
-if not os.path.exists("students.csv"):
-    with open("students.csv", "w", encoding='utf-8') as f:
+if not os.path.exists(STUDENTS_CSV):
+    with open(STUDENTS_CSV, "w", encoding='utf-8') as f:
         f.write("name\n")
         f.write("Fernando Sobreira\n")
         f.write("João Beroni\n")
-    print("\n📝 Created students.csv - Add more students to this file and run again!")
+    print(f"\n📝 Created {STUDENTS_CSV} - Add more students to this file and run again!")
 
 print(f"\n✅ Generated {len(students)} certificates successfully!")
 print(f"📦 NFT Collection: {NFT_TICKER}")
 print(f"🔢 NFT Range: {NFT_TICKER}/{NFT_STARTING_NONCE} to {NFT_TICKER}/{NFT_STARTING_NONCE + len(students) - 1}")
+
+# Show current configuration
+print("\n📋 Configuration used:")
+print(f"   Course: {COURSE_NAME}")
+print(f"   Duration: {COURSE_LOAD}")
+print(f"   Location: {LOCATION}")
+print(f"   Date: {LOCATION_DATE}")
+print(f"   Instructor: {PROFESSOR_NAME} ({PROFESSOR_TITLE})")
+print(f"   NFT Ticker: {NFT_TICKER}")
+print(f"   Students CSV: {STUDENTS_CSV}")
+print(f"   Output: {OUTPUT_DIR}/")
