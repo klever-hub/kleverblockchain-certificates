@@ -5,6 +5,8 @@ from reportlab.lib.colors import HexColor
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import os
+import csv
+from datetime import datetime
 
 # Try to register the Mistrully cursive font
 try:
@@ -20,20 +22,41 @@ except:
 COURSE_NAME = "Klever Blockchain: Construindo Smart Contracts na Prática"
 COURSE_LOAD = "12 horas"
 LOCATION = "Universidade de Fortaleza (UNIFOR)"
+LOCATION_DATE = "Fortaleza, Julho de 2025"
 PROFESSOR_NAME = "Nicollas Gabriel"
 PROFESSOR_TITLE = "Klever Blockchain Leader"
 UNIFOR_LOGO_PATH = "./images/unifor.png"
 KLEVER_LOGO_PATH = "./images/klever.png"
 BACKGROUND_PATH = "./images/background.png"
 
-# Load student names (replace this list or load from a CSV)
-students = ["Fernando Sobreira", "João Beroni"]
+# Load student names
+def load_students():
+    """Load students from CSV file if exists, otherwise use default list"""
+    csv_file = "students.csv"
+    if os.path.exists(csv_file):
+        students = []
+        with open(csv_file, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            next(reader, None)  # Skip header if exists
+            for row in reader:
+                if row:  # Check if row is not empty
+                    students.append(row[0])
+        return students
+    else:
+        # throw error loading students
+        print(f"⚠️ Warning: {csv_file} not found! Using default student list.")
+        return []
+
+students = load_students()
 
 # Output directory
 os.makedirs("certificates", exist_ok=True)
 
+# Certificate ID counter
+certificate_id = 1000
+
 # Generate certificates
-for student in students:
+for idx, student in enumerate(students):
     output_file = f"certificates/{student.replace(' ', '_')}_certificate.pdf"
     c = canvas.Canvas(output_file, pagesize=landscape(A4))
     width, height = landscape(A4)
@@ -42,9 +65,18 @@ for student in students:
     if os.path.exists(BACKGROUND_PATH):
         c.drawImage(BACKGROUND_PATH, 0, 0, width=width, height=height)
     
-    # Title
-    c.setFont("Helvetica-Bold", 36)
-    c.drawCentredString(width / 2, height - 120, "CERTIFICADO DE PARTICIPAÇÃO")
+    # Add border frame
+    c.setStrokeColor(HexColor('#cccccc'))
+    c.setLineWidth(2)
+    c.rect(30, 30, width - 60, height - 60, stroke=1, fill=0)
+    
+    # Title with better spacing
+    c.setFont("Helvetica-Bold", 42)
+    c.setFillColor(HexColor('#1a237e'))  # Dark blue for title
+    c.drawCentredString(width / 2, height - 100, "CERTIFICADO DE PARTICIPAÇÃO")
+    
+    # Reset to black for body text
+    c.setFillColor(HexColor('#000000'))
     
     # Main content with inline text
     text_y = height / 2 + 80
@@ -53,25 +85,34 @@ for student in students:
     c.setFont("Helvetica", 20)
     c.drawCentredString(width / 2, text_y, "Certificamos que")
     
-    # Student name inline with larger font
-    c.setFont("Helvetica-Bold", 28)
-    c.drawCentredString(width / 2, text_y - 40, student.upper())
+    # Student name with emphasis
+    c.setFont("Helvetica-Bold", 32)
+    c.setFillColor(HexColor('#1a237e'))  # Highlight student name
+    c.drawCentredString(width / 2, text_y - 45, student.upper())
+    
+    # Reset to black
+    c.setFillColor(HexColor('#000000'))
     
     # Course participation text
     c.setFont("Helvetica", 18)
-    c.drawCentredString(width / 2, text_y - 80, f"participou do curso {COURSE_NAME}")
+    c.drawCentredString(width / 2, text_y - 85, "participou do curso")
+    
+    # Course name with emphasis
+    c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(width / 2, text_y - 115, COURSE_NAME)
     
     # Event details
     c.setFont("Helvetica", 16)
-    c.drawCentredString(width / 2, text_y - 115, f"realizado na {LOCATION}, com carga horária total de {COURSE_LOAD},")
-    c.drawCentredString(width / 2, text_y - 140, "em Julho de 2025.")
+    c.drawCentredString(width / 2, text_y - 150, f"realizado na {LOCATION}, com carga horária total de {COURSE_LOAD},")
+    c.drawCentredString(width / 2, text_y - 175, "em Julho de 2025.")
     
     # Signature section
-    signature_y = 180
+    signature_y = 150
     
     # Signature line
     line_start_x = width / 2 - 150
     line_end_x = width / 2 + 150
+    c.setLineWidth(1)
     c.line(line_start_x, signature_y, line_end_x, signature_y)
     
     # Draw signature using font
@@ -88,10 +129,17 @@ for student in students:
     c.setFont("Helvetica", 12)
     c.drawCentredString(width / 2, signature_y - 40, PROFESSOR_TITLE)
     
+    # Certificate ID and verification
+    c.setFont("Helvetica", 10)
+    c.setFillColor(HexColor('#666666'))
+    cert_number = f"ID: KLC-{certificate_id + idx}"
+    c.drawString(40, 45, cert_number)
+    c.drawRightString(width - 40, 45, f"Verificação: klever.org/verify/{cert_number}")
+    
     # Logos at bottom - side by side, centered
-    logo_y = 50
-    logo_size = 80
-    logo_spacing = 250
+    logo_y = 45
+    logo_size = 70
+    logo_spacing = 220
     
     # Calculate center positions for logos
     left_logo_x = width / 2 - logo_spacing / 2 - logo_size / 2
@@ -101,11 +149,22 @@ for student in students:
         c.drawImage(UNIFOR_LOGO_PATH, left_logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto')
     
     if os.path.exists(KLEVER_LOGO_PATH):
-        c.drawImage(KLEVER_LOGO_PATH, right_logo_x, logo_y, width=logo_size + 10, height=logo_size + 10, preserveAspectRatio=True, mask='auto')
+        c.drawImage(KLEVER_LOGO_PATH, right_logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto')
     
     # Date at the very bottom
     c.setFont("Helvetica", 12)
-    c.drawCentredString(width / 2, 25, "Fortaleza, Julho de 2025")
+    c.setFillColor(HexColor('#000000'))
+    c.drawCentredString(width / 2, 40, LOCATION_DATE)
     
     c.save()
-    print(f"Certificate generated for {student}: {output_file}")
+    print(f"✓ Certificate generated for {student}: {output_file} (ID: KLC-{certificate_id + idx})")
+
+# Create sample students.csv if it doesn't exist
+if not os.path.exists("students.csv"):
+    with open("students.csv", "w", encoding='utf-8') as f:
+        f.write("name\n")
+        f.write("Fernando Sobreira\n")
+        f.write("João Beroni\n")
+    print("\n📝 Created students.csv - Add more students to this file and run again!")
+
+print(f"\n✅ Generated {len(students)} certificates successfully!")
