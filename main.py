@@ -10,6 +10,9 @@ import qrcode
 from io import BytesIO
 import argparse
 from dotenv import load_dotenv
+import hashlib
+import json
+from merkle_tree import create_certificate_merkle_tree
 
 # Load environment variables from .env file if exists
 load_dotenv()
@@ -158,6 +161,22 @@ def generate_qr_code(data):
     
     return img_bytes
 
+def hash_file(file_path):
+    """Calculate SHA256 hash of a file"""
+    sha256_hash = hashlib.sha256()
+    try:
+        with open(file_path, "rb") as f:
+            # Read and update hash in chunks of 4K
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        return sha256_hash.hexdigest()
+    except FileNotFoundError:
+        print(f"⚠️ File not found: {file_path}")
+        return None
+    except Exception as e:
+        print(f"❌ Error hashing file {file_path}: {str(e)}")
+        return None
+
 students = load_students()
 
 if not students:
@@ -166,6 +185,9 @@ if not students:
 
 # Output directory
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# Metadata list to store certificate info
+metadata_list = []
 
 # Generate certificates
 for idx, student in enumerate(students):
@@ -287,7 +309,50 @@ for idx, student in enumerate(students):
     c.drawRightString(width - 40, 45, LOCATION_DATE)
     
     c.save()
-    print(f"✓ Certificate generated for {student}: {output_file} (NFT: {nft_id})")
+    
+    # Calculate hash of the PDF file
+    pdf_hash = hash_file(output_file)
+    if pdf_hash:
+        # Prepare certificate data
+        cert_data = {
+            "nonce": nft_nonce,
+            "nft_id": nft_id,
+            "name": student,
+            "pdf_hash": pdf_hash,
+            "course": COURSE_NAME,
+            "location": LOCATION,
+            "date": LOCATION_DATE,
+            "instructor": PROFESSOR_NAME,
+            "instructor_title": PROFESSOR_TITLE,
+            "verify_url": verify_url
+        }
+        
+        # Create Merkle tree and get root hash and proofs
+        root_hash, proofs = create_certificate_merkle_tree(cert_data)
+        
+        # Store metadata with Merkle tree information
+        cert_metadata = {
+            "nonce": nft_nonce,
+            "nft_id": nft_id,
+            "hash": pdf_hash,  # PDF hash as "hash"
+            "rootHash": root_hash,  # Merkle tree root
+            "verify_url": verify_url,
+            # Include all proofs for ZKP
+            **proofs,
+            # Include the actual values (these could be omitted for privacy)
+            "_privateData": {
+                "name": student,
+                "course": COURSE_NAME,
+                "location": LOCATION,
+                "date": LOCATION_DATE,
+                "instructor": PROFESSOR_NAME,
+                "instructor_title": PROFESSOR_TITLE,
+            }
+        }
+        metadata_list.append(cert_metadata)
+        print(f"✓ Certificate generated for {student}: {output_file} (NFT: {nft_id})")
+        print(f"  📄 SHA256: {pdf_hash}")
+        print(f"  🌳 Merkle Root: {root_hash[:16]}...")
 
 # Create sample students.csv if it doesn't exist
 if not os.path.exists(STUDENTS_CSV):
@@ -300,6 +365,12 @@ if not os.path.exists(STUDENTS_CSV):
 print(f"\n✅ Generated {len(students)} certificates successfully!")
 print(f"📦 NFT Collection: {NFT_ID}")
 print(f"🔢 NFT Range: {NFT_ID}/{NFT_STARTING_NONCE} to {NFT_ID}/{NFT_STARTING_NONCE + len(students) - 1}")
+
+# Save metadata to JSON file
+metadata_file = f"{OUTPUT_DIR}/metadata.json"
+with open(metadata_file, 'w', encoding='utf-8') as f:
+    json.dump(metadata_list, f, indent=2, ensure_ascii=False)
+print(f"\n📋 Metadata saved to: {metadata_file}")
 
 # Show current configuration
 print("\n📋 Configuration used:")
