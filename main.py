@@ -31,6 +31,8 @@ parser.add_argument('--professor-name', default=os.getenv('PROFESSOR_NAME', 'Nic
                     help='Name of the instructor')
 parser.add_argument('--professor-title', default=os.getenv('PROFESSOR_TITLE', 'Klever Blockchain Leader'),
                     help='Title of the instructor')
+parser.add_argument('--certificate-issuer', default=os.getenv('CERTIFICATE_ISSUER', 'Klever Blockchain Academy'),
+                    help='Certificate issuing organization')
 parser.add_argument('--nft-id', default=os.getenv('NFT_ID', 'KCERT-ABCD'),
                     help='NFT collection ID')
 parser.add_argument('--nft-starting-nonce', type=int, default=int(os.getenv('NFT_STARTING_NONCE', '1')),
@@ -59,6 +61,7 @@ LOCATION = args.location
 LOCATION_DATE = args.location_date
 PROFESSOR_NAME = args.professor_name
 PROFESSOR_TITLE = args.professor_title
+CERTIFICATE_ISSUER = args.certificate_issuer
 NFT_ID = args.nft_id
 NFT_STARTING_NONCE = args.nft_starting_nonce
 STUDENTS_CSV = args.students_csv
@@ -303,10 +306,17 @@ for idx, student in enumerate(students):
     c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 45, "Verificação:")
     c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 60, verify_url)
     
+    # Certificate Issuer - bottom center
+    c.setFont("Helvetica", 10)
+    c.setFillColor(HexColor('#1a237e'))  # Dark blue for issuer
+    c.drawCentredString(width / 2, 55, f"Certificado emitido por")
+    c.setFont("Helvetica-Bold", 11)
+    c.drawCentredString(width / 2, 40, CERTIFICATE_ISSUER)
+    
     # Date at the bottom right
-    c.setFont("Helvetica", 11)
-    c.setFillColor(HexColor('#000000'))
-    c.drawRightString(width - 40, 45, LOCATION_DATE)
+    c.setFont("Helvetica", 10)
+    c.setFillColor(HexColor('#666666'))  # Gray for date
+    c.drawRightString(width - 40, 40, LOCATION_DATE)
     
     c.save()
     
@@ -320,10 +330,12 @@ for idx, student in enumerate(students):
             "name": student,
             "pdf_hash": pdf_hash,
             "course": COURSE_NAME,
+            "course_load": COURSE_LOAD,
             "location": LOCATION,
             "date": LOCATION_DATE,
             "instructor": PROFESSOR_NAME,
             "instructor_title": PROFESSOR_TITLE,
+            "issuer": CERTIFICATE_ISSUER,
             "verify_url": verify_url
         }
         
@@ -343,10 +355,12 @@ for idx, student in enumerate(students):
             "_privateData": {
                 "name": student,
                 "course": COURSE_NAME,
+                "course_load": COURSE_LOAD,
                 "location": LOCATION,
                 "date": LOCATION_DATE,
                 "instructor": PROFESSOR_NAME,
                 "instructor_title": PROFESSOR_TITLE,
+                "issuer": CERTIFICATE_ISSUER,
             }
         }
         metadata_list.append(cert_metadata)
@@ -379,6 +393,7 @@ print(f"   Duration: {COURSE_LOAD}")
 print(f"   Location: {LOCATION}")
 print(f"   Date: {LOCATION_DATE}")
 print(f"   Instructor: {PROFESSOR_NAME} ({PROFESSOR_TITLE})")
+print(f"   Issuer: {CERTIFICATE_ISSUER}")
 print(f"   NFT ID: {NFT_ID}")
 print(f"   Students CSV: {STUDENTS_CSV}")
 print(f"   Output: {OUTPUT_DIR}/")

@@ -145,10 +145,12 @@ def create_certificate_merkle_tree(certificate_data: Dict) -> Tuple[str, Dict[st
     fields_to_include = [
         ('name', certificate_data['name']),
         ('course', certificate_data['course']),
+        ('course_load', certificate_data.get('course_load', '')),
         ('location', certificate_data['location']),
         ('date', certificate_data['date']),
         ('instructor', certificate_data['instructor']),
         ('instructor_title', certificate_data['instructor_title']),
+        ('issuer', certificate_data.get('issuer', '')),
         ('nft_id', certificate_data['nft_id']),
         ('pdf_hash', certificate_data['pdf_hash'])
     ]

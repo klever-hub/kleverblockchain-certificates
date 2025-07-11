@@ -350,10 +350,12 @@ def batch_update_metadata():
             "proofs": {
                 "nameProof": cert.get('nameProof', []),
                 "courseProof": cert.get('courseProof', []),
+                "course_loadProof": cert.get('course_loadProof', []),
                 "locationProof": cert.get('locationProof', []),
                 "dateProof": cert.get('dateProof', []),
                 "instructorProof": cert.get('instructorProof', []),
                 "instructor_titleProof": cert.get('instructor_titleProof', []),
+                "issuerProof": cert.get('issuerProof', []),
                 "nft_idProof": cert.get('nft_idProof', []),
                 "pdf_hashProof": cert.get('pdf_hashProof', [])
             }
