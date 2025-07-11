@@ -28,8 +28,8 @@ parser.add_argument('--professor-name', default=os.getenv('PROFESSOR_NAME', 'Nic
                     help='Name of the instructor')
 parser.add_argument('--professor-title', default=os.getenv('PROFESSOR_TITLE', 'Klever Blockchain Leader'),
                     help='Title of the instructor')
-parser.add_argument('--nft-ticker', default=os.getenv('NFT_TICKER', 'KLVCERT-ABC'),
-                    help='NFT collection ticker')
+parser.add_argument('--nft-id', default=os.getenv('NFT_ID', 'KCERT-ABCD'),
+                    help='NFT collection ID')
 parser.add_argument('--nft-starting-nonce', type=int, default=int(os.getenv('NFT_STARTING_NONCE', '1')),
                     help='Starting nonce for NFT IDs')
 parser.add_argument('--students-csv', default=os.getenv('STUDENTS_CSV', 'students.csv'),
@@ -56,7 +56,7 @@ LOCATION = args.location
 LOCATION_DATE = args.location_date
 PROFESSOR_NAME = args.professor_name
 PROFESSOR_TITLE = args.professor_title
-NFT_TICKER = args.nft_ticker
+NFT_ID = args.nft_id
 NFT_STARTING_NONCE = args.nft_starting_nonce
 STUDENTS_CSV = args.students_csv
 OUTPUT_DIR = args.output_dir
@@ -175,8 +175,8 @@ for idx, student in enumerate(students):
     
     # Calculate NFT ID
     nft_nonce = NFT_STARTING_NONCE + idx
-    nft_id = f"{NFT_TICKER}/{nft_nonce}"
-    verify_url = f"https://verify.klever.org/{nft_id}"
+    nft_id = f"{NFT_ID}/{nft_nonce}"
+    verify_url = f"https://verify.kleverhub.io/{nft_id}"
     
     # Background image (if exists)
     if os.path.exists(BACKGROUND_PATH):
@@ -298,8 +298,8 @@ if not os.path.exists(STUDENTS_CSV):
     print(f"\n📝 Created {STUDENTS_CSV} - Add more students to this file and run again!")
 
 print(f"\n✅ Generated {len(students)} certificates successfully!")
-print(f"📦 NFT Collection: {NFT_TICKER}")
-print(f"🔢 NFT Range: {NFT_TICKER}/{NFT_STARTING_NONCE} to {NFT_TICKER}/{NFT_STARTING_NONCE + len(students) - 1}")
+print(f"📦 NFT Collection: {NFT_ID}")
+print(f"🔢 NFT Range: {NFT_ID}/{NFT_STARTING_NONCE} to {NFT_ID}/{NFT_STARTING_NONCE + len(students) - 1}")
 
 # Show current configuration
 print("\n📋 Configuration used:")
@@ -308,6 +308,6 @@ print(f"   Duration: {COURSE_LOAD}")
 print(f"   Location: {LOCATION}")
 print(f"   Date: {LOCATION_DATE}")
 print(f"   Instructor: {PROFESSOR_NAME} ({PROFESSOR_TITLE})")
-print(f"   NFT Ticker: {NFT_TICKER}")
+print(f"   NFT ID: {NFT_ID}")
 print(f"   Students CSV: {STUDENTS_CSV}")
 print(f"   Output: {OUTPUT_DIR}/")

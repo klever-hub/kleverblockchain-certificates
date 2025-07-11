@@ -8,6 +8,8 @@ venv/
 env/
 ENV/
 .venv
+.env
+*.pem*
 
 # Certificate output
 certificates/
