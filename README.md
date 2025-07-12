@@ -204,6 +204,42 @@ This reads the `students.csv` file and transfers NFTs to addresses specified in 
 
 **Important**: Always follow this order. Transfers should only be done after metadata is updated.
 
+## Certificate Verification
+
+The system uses Merkle tree proofs for zero-knowledge verification of certificate fields.
+
+### List All Certificates
+```bash
+python verify_certificate.py --list
+```
+
+### Verify Specific Field
+```bash
+# Find all certificates with a specific course name
+python verify_certificate.py --field course --value "Klever Blockchain: Construindo Smart Contracts na Prática"
+
+# Verify a specific person's name
+python verify_certificate.py --field name --value "Fernando Sobreira"
+
+# Verify for a specific NFT ID
+python verify_certificate.py --field name --value "Fernando Sobreira" --nft-id "KCERT-V2YJ/1"
+
+# Verify by nonce
+python verify_certificate.py --field course_load --value "12 horas" --nonce 1
+```
+
+### Available Fields for Verification
+- `name`: Certificate holder's name
+- `course`: Course name
+- `course_load`: Course duration
+- `location`: Venue
+- `date`: Event date
+- `instructor`: Instructor name
+- `instructor_title`: Instructor title
+- `issuer`: Certificate issuer
+- `nft_id`: NFT identifier
+- `pdf_hash`: Certificate PDF hash
+
 ## Environment Variables
 
 See `.env.example` for all available options:
