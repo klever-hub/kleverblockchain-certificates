@@ -208,6 +208,14 @@ for idx, student in enumerate(students):
     nft_id = f"{NFT_ID}/{nft_nonce}"
     verify_url = f"https://verify.kleverhub.io/{nft_id}"
     
+    # Set PDF metadata
+    c.setTitle(f"{get_translation(LANGUAGE, 'title')} - {student}")
+    c.setAuthor(CERTIFICATE_ISSUER)
+    c.setSubject(COURSE_NAME)
+    c.setCreator("Klever Blockchain Certificate Generator")
+    c.setProducer("Klever Blockchain Certificate System")
+    c.setKeywords(f"NFT,{nft_id},certificate,blockchain,klever")
+    
     # Background image (if exists)
     if os.path.exists(BACKGROUND_PATH):
         c.drawImage(BACKGROUND_PATH, 0, 0, width=width, height=height)
@@ -333,15 +341,37 @@ for idx, student in enumerate(students):
     
     c.save()
     
-    # Calculate hash of the PDF file
-    pdf_hash = hash_file(output_file)
-    if pdf_hash:
-        # Prepare certificate data
-        cert_data = {
-            "nonce": nft_nonce,
-            "nft_id": nft_id,
+    # Prepare certificate data WITHOUT the PDF hash for Merkle tree
+    # We'll add the final PDF hash after metadata embedding
+    cert_data = {
+        "nonce": nft_nonce,
+        "nft_id": nft_id,
+        "name": student,
+        # Note: pdf_hash is excluded from Merkle tree
+        "course": COURSE_NAME,
+        "course_load": COURSE_LOAD,
+        "location": LOCATION,
+        "date": LOCATION_DATE,
+        "instructor": PROFESSOR_NAME,
+        "instructor_title": PROFESSOR_TITLE,
+        "issuer": CERTIFICATE_ISSUER,
+        "verify_url": verify_url
+    }
+    
+    # Create Merkle tree and get root hash and proofs
+    root_hash, proofs = create_certificate_merkle_tree(cert_data)
+    
+    # Prepare metadata for embedding (without PDF hash)
+    cert_metadata_for_embedding = {
+        "nonce": nft_nonce,
+        "nft_id": nft_id,
+        "rootHash": root_hash,  # Merkle tree root
+        "verify_url": verify_url,
+        # Include all proofs for ZKP
+        **proofs,
+        # Include the actual values
+        "_privateData": {
             "name": student,
-            "pdf_hash": pdf_hash,
             "course": COURSE_NAME,
             "course_load": COURSE_LOAD,
             "location": LOCATION,
@@ -349,22 +379,32 @@ for idx, student in enumerate(students):
             "instructor": PROFESSOR_NAME,
             "instructor_title": PROFESSOR_TITLE,
             "issuer": CERTIFICATE_ISSUER,
-            "verify_url": verify_url
         }
-        
-        # Create Merkle tree and get root hash and proofs
-        root_hash, proofs = create_certificate_merkle_tree(cert_data)
-        
-        # Store metadata with Merkle tree information
+    }
+    
+    # Try to embed metadata into PDF
+    metadata_embedded = False
+    try:
+        from pdf_metadata import embed_verification_data
+        if embed_verification_data(output_file, cert_metadata_for_embedding):
+            metadata_embedded = True
+    except ImportError:
+        pass  # PyPDF2 not installed, skip embedding
+    
+    # NOW calculate the FINAL hash of the PDF file (after metadata embedding)
+    final_pdf_hash = hash_file(output_file)
+    
+    if final_pdf_hash:
+        # Create the complete metadata with the final PDF hash
         cert_metadata = {
             "nonce": nft_nonce,
             "nft_id": nft_id,
-            "hash": pdf_hash,  # PDF hash as "hash"
+            "hash": final_pdf_hash,  # Final PDF hash (after metadata embedding)
             "rootHash": root_hash,  # Merkle tree root
             "verify_url": verify_url,
             # Include all proofs for ZKP
             **proofs,
-            # Include the actual values (these could be omitted for privacy)
+            # Include the actual values
             "_privateData": {
                 "name": student,
                 "course": COURSE_NAME,
@@ -376,10 +416,13 @@ for idx, student in enumerate(students):
                 "issuer": CERTIFICATE_ISSUER,
             }
         }
+        
         metadata_list.append(cert_metadata)
         print(f"✓ Certificate generated for {student}: {output_file} (NFT: {nft_id})")
-        print(f"  📄 SHA256: {pdf_hash}")
+        print(f"  📄 SHA256: {final_pdf_hash}")
         print(f"  🌳 Merkle Root: {root_hash[:16]}...")
+        if metadata_embedded:
+            print(f"  📎 Embedded verification data in PDF")
 
 # Create sample students.csv if it doesn't exist
 if not os.path.exists(STUDENTS_CSV):

@@ -125,8 +125,8 @@ def main():
     parser.add_argument('--list', action='store_true',
                         help='List all certificates in the metadata')
     parser.add_argument('--field',
-                        choices=['name', 'course', 'course_load', 'location', 'date', 'instructor', 'instructor_title', 'issuer', 'nft_id', 'pdf_hash'],
-                        help='Field to verify')
+                        choices=['name', 'course', 'course_load', 'location', 'date', 'instructor', 'instructor_title', 'issuer', 'nft_id'],
+                        help='Field to verify (note: pdf_hash is not part of Merkle tree)')
     parser.add_argument('--value',
                         help='Expected value of the field')
     parser.add_argument('--nonce', type=int,

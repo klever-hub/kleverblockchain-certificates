@@ -356,8 +356,7 @@ def batch_update_metadata():
                 "instructorProof": cert.get('instructorProof', []),
                 "instructor_titleProof": cert.get('instructor_titleProof', []),
                 "issuerProof": cert.get('issuerProof', []),
-                "nft_idProof": cert.get('nft_idProof', []),
-                "pdf_hashProof": cert.get('pdf_hashProof', [])
+                "nft_idProof": cert.get('nft_idProof', [])
             }
         }
         metadata = json.dumps(json_metadata)

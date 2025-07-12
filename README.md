@@ -208,6 +208,70 @@ This reads the `students.csv` file and transfers NFTs to addresses specified in 
 
 The system uses Merkle tree proofs for zero-knowledge verification of certificate fields.
 
+### PDF Metadata
+
+Certificates include embedded metadata in the PDF properties:
+- **Standard Metadata**: Title, Author (Issuer), Subject (Course), Creator, Keywords
+- **Verification Metadata**: NFT ID, Root Hash, Verification URL
+- **Certificate Data**: All certificate fields stored as a delimited string for easy parsing
+
+**Important Note on PDF Hash**: The certificate hash stored in `metadata.json` refers to the FINAL PDF file (after metadata embedding). To avoid circular dependency:
+1. The PDF hash is NOT included in the Merkle tree
+2. The Merkle tree contains only the certificate data fields
+3. After embedding metadata, the final PDF hash is calculated and stored
+
+The workflow is:
+1. Generate PDF → Create Merkle tree (without PDF hash) → Embed metadata (including Merkle root) → Calculate final PDF hash → Store in metadata.json
+
+The certificate data is stored in a single field using a delimiter format:
+- Format: `field1|value1||field2|value2||field3|value3||...`
+- Field separator: `|` (pipe)
+- Record separator: `||` (double pipe)
+- Escaped pipes in values: `\|`
+
+This format makes it easy to extract and validate certificate data in any programming language.
+
+#### Extract Metadata from PDF
+```bash
+# Extract all verification data from a PDF
+python pdf_metadata.py extract certificates/Fernando_Sobreira_certificate.pdf
+
+# Embed metadata into existing PDF
+python pdf_metadata.py embed certificates/Fernando_Sobreira_certificate.pdf --metadata-file certificates/metadata.json
+```
+
+#### Frontend Verification
+With the embedded metadata, frontend applications can:
+1. Extract certificate data directly from the PDF
+2. Display certificate information without external files
+3. Verify the NFT ID and hash
+4. Access the verification URL
+
+Example extracted data:
+```json
+{
+  "nft_id": "KCERT-V2YJ/1",
+  "rootHash": "749644030a2d78e098f524ea2060256d542a401b8afa37fc950bf87d4dc54835",
+  "verify_url": "https://verify.kleverhub.io/KCERT-V2YJ/1",
+  "hash": "88807f995618fcb4252fe7c68d810263fc2a6a0a8045f39b224b241a9c564a3d",
+  "certificate_data_raw": "name|Fernando Sobreira||course|Klever Blockchain: Construindo Smart Contracts na Prática||course_load|12 horas||location|Universidade de Fortaleza (UNIFOR)||date|Fortaleza, Julho de 2025||instructor|Nicollas Gabriel||instructor_title|Klever Blockchain Leader||issuer|Klever Blockchain Academy",
+  "certificate_data": {
+    "name": "Fernando Sobreira",
+    "course": "Klever Blockchain: Construindo Smart Contracts na Prática",
+    "course_load": "12 horas",
+    "location": "Universidade de Fortaleza (UNIFOR)",
+    "date": "Fortaleza, Julho de 2025",
+    "instructor": "Nicollas Gabriel",
+    "instructor_title": "Klever Blockchain Leader",
+    "issuer": "Klever Blockchain Academy"
+  }
+}
+```
+
+The `certificate_data_raw` field contains the delimited string that can be easily parsed in any language.
+
+Note: PDF metadata embedding happens automatically during certificate generation if PyPDF2 is installed.
+
 ### List All Certificates
 ```bash
 python verify_certificate.py --list
@@ -238,7 +302,8 @@ python verify_certificate.py --field course_load --value "12 horas" --nonce 1
 - `instructor_title`: Instructor title
 - `issuer`: Certificate issuer
 - `nft_id`: NFT identifier
-- `pdf_hash`: Certificate PDF hash
+
+Note: The PDF hash is stored in metadata.json but is NOT part of the Merkle tree to avoid circular dependency.
 
 ## Environment Variables
 

@@ -152,7 +152,6 @@ def create_certificate_merkle_tree(certificate_data: Dict) -> Tuple[str, Dict[st
         ('instructor_title', certificate_data['instructor_title']),
         ('issuer', certificate_data.get('issuer', '')),
         ('nft_id', certificate_data['nft_id']),
-        ('pdf_hash', certificate_data['pdf_hash'])
     ]
     
     for field_name, field_value in fields_to_include:
