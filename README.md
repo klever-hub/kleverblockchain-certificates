@@ -74,10 +74,30 @@ python main.py \
 - `--location-date`: City and date
 - `--professor-name`: Instructor name
 - `--professor-title`: Instructor title
+- `--certificate-issuer`: Organization issuing the certificate
+- `--language`: Certificate language (en, pt, es, fr) - default: en
 - `--nft-ticker`: NFT collection ID
 - `--nft-starting-nonce`: First NFT number
 - `--students-csv`: Student data file
 - `--output-dir`: Output directory
+
+### Language Support
+
+Certificates can be generated in multiple languages:
+
+```bash
+# English (default)
+python main.py --language en
+
+# Portuguese
+python main.py --language pt
+
+# Spanish
+python main.py --language es
+
+# French
+python main.py --language fr
+```
 
 ## NFT Management
 

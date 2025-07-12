@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import hashlib
 import json
 from merkle_tree import create_certificate_merkle_tree
+from translations import get_translation, get_available_languages
 
 # Load environment variables from .env file if exists
 load_dotenv()
@@ -41,6 +42,9 @@ parser.add_argument('--students-csv', default=os.getenv('STUDENTS_CSV', 'student
                     help='Path to CSV file with student names')
 parser.add_argument('--output-dir', default=os.getenv('OUTPUT_DIR', 'certificates'),
                     help='Output directory for certificates')
+parser.add_argument('--language', default=os.getenv('LANGUAGE', 'en'),
+                    choices=get_available_languages(),
+                    help='Language for certificate text (default: en)')
 
 args = parser.parse_args()
 
@@ -66,6 +70,7 @@ NFT_ID = args.nft_id
 NFT_STARTING_NONCE = args.nft_starting_nonce
 STUDENTS_CSV = args.students_csv
 OUTPUT_DIR = args.output_dir
+LANGUAGE = args.language
 
 # Fixed paths for logos and background
 UNIFOR_LOGO_PATH = "./images/unifor.png"
@@ -230,7 +235,7 @@ for idx, student in enumerate(students):
     # Title with better spacing
     c.setFont("Helvetica-Bold", 42)
     c.setFillColor(HexColor('#1a237e'))  # Dark blue for title
-    c.drawCentredString(width / 2, height - 100, "CERTIFICADO DE PARTICIPAÇÃO")
+    c.drawCentredString(width / 2, height - 100, get_translation(LANGUAGE, 'title'))
     
     # Reset to black for body text
     c.setFillColor(HexColor('#000000'))
@@ -238,9 +243,9 @@ for idx, student in enumerate(students):
     # Main content with inline text
     text_y = height / 2 + 90
     
-    # First line: "Certificamos que"
+    # First line: "We certify that"
     c.setFont("Helvetica", 20)
-    c.drawCentredString(width / 2, text_y, "Certificamos que")
+    c.drawCentredString(width / 2, text_y, get_translation(LANGUAGE, 'certify_that'))
     
     # Student name with emphasis
     c.setFont("Helvetica-Bold", 32)
@@ -252,7 +257,7 @@ for idx, student in enumerate(students):
     
     # Course participation text
     c.setFont("Helvetica", 18)
-    c.drawCentredString(width / 2, text_y - 80, "participou do curso")
+    c.drawCentredString(width / 2, text_y - 80, get_translation(LANGUAGE, 'participated_in'))
     
     # Course name with emphasis
     c.setFont("Helvetica-Bold", 20)
@@ -260,8 +265,13 @@ for idx, student in enumerate(students):
     
     # Event details
     c.setFont("Helvetica", 16)
-    c.drawCentredString(width / 2, text_y - 135, f"realizado na {LOCATION}, com carga horária total de {COURSE_LOAD},")
-    c.drawCentredString(width / 2, text_y - 160, "em Julho de 2025.")
+    held_at = get_translation(LANGUAGE, 'held_at')
+    with_duration = get_translation(LANGUAGE, 'with_duration')
+    c.drawCentredString(width / 2, text_y - 135, f"{held_at} {LOCATION}, {with_duration} {COURSE_LOAD},")
+    
+    # Date line
+    date_text = get_translation(LANGUAGE, 'date_format').replace('{date}', LOCATION_DATE)
+    c.drawCentredString(width / 2, text_y - 160, f"{date_text}.")
     
     # Signature section
     signature_y = 155
@@ -299,17 +309,20 @@ for idx, student in enumerate(students):
     # NFT ID text next to QR code
     c.setFont("Helvetica-Bold", 11)
     c.setFillColor(HexColor('#000000'))
-    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 25, f"NFT ID: {nft_id}")
+    nft_label = get_translation(LANGUAGE, 'nft_id')
+    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 25, f"{nft_label} {nft_id}")
     
     c.setFont("Helvetica", 9)
     c.setFillColor(HexColor('#666666'))
-    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 45, "Verificação:")
+    verification_label = get_translation(LANGUAGE, 'verification')
+    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 45, verification_label)
     c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 60, verify_url)
     
     # Certificate Issuer - bottom center
     c.setFont("Helvetica", 10)
     c.setFillColor(HexColor('#1a237e'))  # Dark blue for issuer
-    c.drawCentredString(width / 2, 55, f"Certificado emitido por")
+    issued_by = get_translation(LANGUAGE, 'issued_by')
+    c.drawCentredString(width / 2, 55, issued_by)
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(width / 2, 40, CERTIFICATE_ISSUER)
     
@@ -394,6 +407,7 @@ print(f"   Location: {LOCATION}")
 print(f"   Date: {LOCATION_DATE}")
 print(f"   Instructor: {PROFESSOR_NAME} ({PROFESSOR_TITLE})")
 print(f"   Issuer: {CERTIFICATE_ISSUER}")
+print(f"   Language: {LANGUAGE}")
 print(f"   NFT ID: {NFT_ID}")
 print(f"   Students CSV: {STUDENTS_CSV}")
 print(f"   Output: {OUTPUT_DIR}/")
