@@ -93,6 +93,7 @@ def embed_verification_data(pdf_path, metadata):
             # Create custom metadata (will be merged with existing)
             custom_metadata = {
                 '/NFT_ID': metadata.get('nft_id', ''),
+                '/Salt': metadata.get('salt', ''),
                 '/RootHash': metadata.get('rootHash', ''),
                 '/VerifyURL': metadata.get('verify_url', ''),
                 # Note: We CANNOT include the certificate hash here as it would change the PDF
@@ -169,6 +170,7 @@ def extract_verification_data(pdf_path):
             if metadata:
                 verification_data = {
                     'nft_id': metadata.get('/NFT_ID', ''),
+                    'salt': metadata.get('/Salt', ''),
                     'rootHash': metadata.get('/RootHash', ''),
                     'verify_url': metadata.get('/VerifyURL', ''),
                     # Note: hash is not stored in PDF metadata as it would create a circular dependency
