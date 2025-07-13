@@ -2,9 +2,19 @@
 
 Generate professional NFT certificates for Klever Blockchain courses.
 
+## Quick Start
+
+1. **Create NFT Collection**: `python nft_manager.py create --ticker MYCERT`
+2. **Generate Certificates**: `python main.py --nft-id "MYCERT-XXXX"`
+3. **Mint NFTs**: `python nft_manager.py mint-all`
+4. **Update Metadata**: `python nft_manager.py update-all`
+5. **Transfer to Students**: `python nft_manager.py transfer-all`
+
+See the [Complete Workflow](#complete-workflow) section for detailed instructions.
+
 ## Features
 - 🎨 Professional certificate design with customizable elements
-- 🔗 NFT integration with unique IDs (TICKER/NONCE format)
+- 🔗 NFT integration with unique IDs (TICKER-XXXX/NONCE format)
 - 📱 QR codes with Klever logo for verification
 - 🎯 Batch generation from CSV files
 - ⚙️ Flexible configuration via CLI or environment variables
@@ -63,7 +73,7 @@ The metadata is automatically generated from the certificate data - no need for 
 python main.py \
   --course-name "Advanced Smart Contracts" \
   --professor-name "John Doe" \
-  --nft-ticker "KLVADV" \
+  --nft-id "KCERT-A7B9" \
   --location "Klever Labs"
 ```
 
@@ -77,7 +87,7 @@ python main.py \
 - `--certificate-issuer`: Organization issuing the certificate
 - `--language`: Certificate language (en, pt, es, fr) - default: en
 - `--network`: Network to use (mainnet/testnet) - default: testnet
-- `--nft-ticker`: NFT collection ID
+- `--nft-id`: NFT collection ID (format: TICKER-XXXX, e.g., KCERT-A7B9)
 - `--nft-starting-nonce`: First NFT number
 - `--students-csv`: Student data file
 - `--output-dir`: Output directory
@@ -197,34 +207,79 @@ This reads the `students.csv` file and transfers NFTs to addresses specified in 
 - `--node`: Override node URL (optional)
 - `--api`: Override API URL (optional)
 
-## Workflow Example
+## Complete Workflow
 
-1. **Generate Certificates**
-   ```bash
-   python main.py --nft-id "KCERT-2025"
-   ```
+### Step 1: Create NFT Collection First
 
-2. **Create NFT Collection**
-   ```bash
-   python nft_manager.py create
-   ```
+Before generating certificates, you need to create an NFT collection on the blockchain:
 
-3. **Mint NFTs to Owner**
-   ```bash
-   python nft_manager.py mint-all
-   ```
+```bash
+# Set your desired NFT ticker (max 8 uppercase characters)
+export NFT_TICKER="KCERT25"
 
-4. **Update NFT Metadata**
-   ```bash
-   python nft_manager.py update-all
-   ```
+# Create the NFT collection
+python nft_manager.py create --ticker $NFT_TICKER
+```
 
-5. **Transfer NFTs to Recipients**
-   ```bash
-   python nft_manager.py transfer-all
-   ```
+This will output something like:
+```
+✅ NFT Collection created successfully!
+   Ticker: KCERT25
+   Collection ID: KCERT25-A7B9
+   Name: KleverBlockchainCertificate
 
-**Important**: Always follow this order. Transfers should only be done after metadata is updated.
+🔔 IMPORTANT: Save this Collection ID for next steps: KCERT25-A7B9
+   (Also saved to KCERT25_collection_id.txt)
+```
+
+**Important**: 
+- The blockchain automatically assigns a Collection ID in the format `TICKER-XXXX` where XXXX are 4 random uppercase characters
+- The ID is automatically saved to a file for convenience
+- You can retrieve it later with: `python nft_manager.py get-id --ticker KCERT25`
+- The ticker must be uppercase and max 8 characters
+
+### Step 2: Generate Certificates with the NFT ID
+
+Now generate the certificates using the Collection ID from step 1:
+
+```bash
+python main.py --nft-id "KCERT25-A7B9" \
+  --course-name "Your Course Name" \
+  --students-csv "students.csv"
+```
+
+This creates:
+- PDF certificates for each student
+- `metadata.json` with verification data
+
+### Step 3: Mint NFTs to Owner
+
+Mint all NFTs to your wallet first:
+
+```bash
+python nft_manager.py mint-all --id "KCERT25-A7B9"
+```
+
+### Step 4: Update NFT Metadata
+
+Add the certificate verification data to each NFT:
+
+```bash
+python nft_manager.py update-all --id "KCERT25-A7B9"
+```
+
+### Step 5: Transfer NFTs to Recipients
+
+Finally, transfer the NFTs to the students:
+
+```bash
+python nft_manager.py transfer-all --id "KCERT25-A7B9"
+```
+
+**Important**: 
+- Always create the NFT collection BEFORE generating certificates
+- Use the exact Collection ID returned from the create command
+- Follow the steps in order - transfers should only be done after metadata is updated
 
 ## Certificate Verification
 

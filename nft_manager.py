@@ -133,6 +133,7 @@ def create_nft_collection():
         "--key-file", WALLET_KEY,
         "--node", NODE_URL,
         "--await",
+        "--result-only",
         "-s"  # auto sign
     ]
     
@@ -142,8 +143,41 @@ def create_nft_collection():
     
     result = run_command(cmd)
     if result:
-        print(f"✅ NFT Collection {NFT_TICKER} created successfully!")
-        return True
+        try:
+            # Parse the JSON response
+            response_data = json.loads(result)
+            
+            # Extract the NFT ID from receipts
+            nft_id = None
+            for receipt in response_data.get('receipts', []):
+                if receipt.get('type') == 1 and receipt.get('typeString') == 'CreateKDA':
+                    nft_id = receipt.get('assetId')
+                    break
+            
+            if nft_id:
+                print(f"✅ NFT Collection created successfully!")
+                print(f"   Ticker: {NFT_TICKER}")
+                print(f"   Collection ID: {nft_id}")
+                print(f"   Name: {NFT_NAME}")
+                print(f"\n🔔 IMPORTANT: Save this Collection ID for next steps: {nft_id}")
+                
+                # Optionally save to a file for convenience
+                with open(f"{NFT_TICKER}_collection_id.txt", "w") as f:
+                    f.write(nft_id)
+                print(f"   (Also saved to {NFT_TICKER}_collection_id.txt)")
+                
+                return True
+            else:
+                print(f"✅ NFT Collection creation transaction sent!")
+                print(f"   Ticker: {NFT_TICKER}")
+                print(f"   Check transaction hash: {response_data.get('hash', 'N/A')}")
+                return True
+                
+        except json.JSONDecodeError:
+            # Fallback if response is not JSON
+            print(f"✅ NFT Collection {NFT_TICKER} created successfully!")
+            print(f"   Name: {NFT_NAME}")
+            return True
     return False
 
 def mint_nft(nonce, skip_validation=False):
@@ -177,6 +211,7 @@ def mint_nft(nonce, skip_validation=False):
         "--key-file", WALLET_KEY,
         "--node", NODE_URL,
         "--await",
+        "--result-only",
         "-s"
     ]
     result = run_command(cmd)
@@ -197,6 +232,7 @@ def transfer_nft(nft_id, to_address):
         "--key-file", WALLET_KEY,
         "--node", NODE_URL,
         "--await",
+        "--result-only",
         "-s"
     ]
     
@@ -224,6 +260,7 @@ def update_metadata(nonce, metadata):
         "--key-file", WALLET_KEY,
         "--node", NODE_URL,
         "--await",
+        "--result-only",
         "-s"
     ]
     
@@ -408,11 +445,19 @@ def check_collection_status():
     if next_nonce:
         print(f"\n✅ Next available nonce: {next_nonce}")
 
+def get_saved_collection_id(ticker):
+    """Try to read saved collection ID from file"""
+    try:
+        with open(f"{ticker}_collection_id.txt", "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+
 def main():
     global WALLET_KEY, NODE_URL, API_URL, NFT_TICKER, NFT_ID, NETWORK
     
     parser = argparse.ArgumentParser(description='Klever NFT Certificate Manager')
-    parser.add_argument('action', choices=['status', 'create', 'mint', 'mint-all', 'transfer', 'transfer-all', 'update', 'update-all'],
+    parser.add_argument('action', choices=['status', 'create', 'mint', 'mint-all', 'transfer', 'transfer-all', 'update', 'update-all', 'get-id'],
                         help='Action to perform')
     parser.add_argument('--nonce', type=int, help='NFT nonce (for single mint/update)')
     parser.add_argument('--address', help='Recipient address (for single mint)')
@@ -435,7 +480,11 @@ def main():
         else:  # testnet
             NODE_URL = "https://node.testnet.klever.org"
             API_URL = "https://api.testnet.klever.org"
-    
+
+    # allow override with environment variables
+    NODE_URL = os.getenv("NODE_URL", NODE_URL)
+    API_URL = os.getenv("API_URL", API_URL)
+
     # Allow override with specific URLs if provided
     if args.node:
         NODE_URL = args.node
@@ -501,6 +550,15 @@ def main():
     
     elif args.action == 'update-all':
         batch_update_metadata()
+    
+    elif args.action == 'get-id':
+        # Try to get saved collection ID
+        saved_id = get_saved_collection_id(NFT_TICKER)
+        if saved_id:
+            print(f"📋 Saved Collection ID for {NFT_TICKER}: {saved_id}")
+        else:
+            print(f"❌ No saved Collection ID found for {NFT_TICKER}")
+            print(f"   Run 'python nft_manager.py create --ticker {NFT_TICKER}' first")
 
 if __name__ == "__main__":
     main()
