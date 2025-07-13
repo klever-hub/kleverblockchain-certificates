@@ -14,9 +14,18 @@ import hashlib
 import json
 from merkle_tree import create_certificate_merkle_tree
 from translations import get_translation, get_available_languages
+import random
+import string
 
 # Load environment variables from .env file if exists
 load_dotenv()
+
+def generate_salt(length=16):
+    """Generate a user-friendly salt using alphanumeric characters"""
+    # Use uppercase letters and numbers for easier reading/typing
+    # Avoid confusing characters like 0/O, 1/I/l
+    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    return ''.join(random.choice(chars) for _ in range(length))
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Generate NFT certificates for Klever Blockchain courses')
@@ -212,10 +221,11 @@ for idx, student in enumerate(students):
     c = canvas.Canvas(output_file, pagesize=landscape(A4))
     width, height = landscape(A4)
     
-    # Calculate NFT ID
+    # Calculate NFT ID and generate salt
     nft_nonce = NFT_STARTING_NONCE + idx
     nft_id = f"{NFT_ID}/{nft_nonce}"
-    verify_url = f"{VERIFY_BASE_URL}/{nft_id}"
+    salt = generate_salt()
+    verify_url = f"{VERIFY_BASE_URL}/{nft_id}?salt={salt}"
     
     # Set PDF metadata
     c.setTitle(f"{get_translation(LANGUAGE, 'title')} - {student}")
@@ -323,17 +333,30 @@ for idx, student in enumerate(students):
     qr_img = generate_qr_code(verify_url)
     c.drawImage(ImageReader(qr_img), qr_x, qr_y, width=qr_size, height=qr_size)
     
-    # NFT ID text next to QR code
-    c.setFont("Helvetica-Bold", 11)
+    # Verification info next to QR code
+    info_x = qr_x + qr_size + 5
+    
+    # NFT ID
+    c.setFont("Helvetica-Bold", 9)
     c.setFillColor(HexColor('#000000'))
     nft_label = get_translation(LANGUAGE, 'nft_id')
-    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 25, f"{nft_label} {nft_id}")
+    c.drawString(info_x, qr_y + qr_size - 15, f"{nft_label} {nft_id}")
     
-    c.setFont("Helvetica", 9)
-    c.setFillColor(HexColor('#666666'))
+    # Security Code - formatted in groups of 4
+    salt_label = get_translation(LANGUAGE, 'salt')
+    formatted_salt = '-'.join([salt[i:i+4] for i in range(0, len(salt), 4)])
+    c.drawString(info_x, qr_y + qr_size - 30, salt_label)
+    c.drawString(info_x, qr_y + qr_size - 45, formatted_salt)
+    
+    # Verification URL - aligned to bottom of QR code
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor('#666666'))  # Gray for label
     verification_label = get_translation(LANGUAGE, 'verification')
-    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 45, verification_label)
-    c.drawString(qr_x + qr_size + 10, qr_y + qr_size - 60, verify_url)
+    c.drawString(info_x, qr_y + 15, verification_label)  # Near bottom of QR
+    c.setFont("Helvetica", 7)
+    c.setFillColor(HexColor('#444444'))  # Darker gray for URL
+    base_url = verify_url.split('?')[0]  # Show only base URL
+    c.drawString(info_x, qr_y + 5, base_url)  # At bottom of QR
     
     # Certificate Issuer - bottom center
     c.setFont("Helvetica", 10)
@@ -355,6 +378,7 @@ for idx, student in enumerate(students):
     cert_data = {
         "nonce": nft_nonce,
         "nft_id": nft_id,
+        "salt": salt,  # Include salt in the data to be hashed
         "name": student,
         # Note: pdf_hash is excluded from Merkle tree
         "course": COURSE_NAME,
@@ -374,6 +398,7 @@ for idx, student in enumerate(students):
     cert_metadata_for_embedding = {
         "nonce": nft_nonce,
         "nft_id": nft_id,
+        "salt": salt,  # Include salt for verification
         "rootHash": root_hash,  # Merkle tree root
         "verify_url": verify_url,
         # Include all proofs for ZKP
@@ -408,6 +433,7 @@ for idx, student in enumerate(students):
         cert_metadata = {
             "nonce": nft_nonce,
             "nft_id": nft_id,
+            "salt": salt,  # Include salt for verification
             "hash": final_pdf_hash,  # Final PDF hash (after metadata embedding)
             "rootHash": root_hash,  # Merkle tree root
             "verify_url": verify_url,
@@ -430,6 +456,7 @@ for idx, student in enumerate(students):
         print(f"✓ Certificate generated for {student}: {output_file} (NFT: {nft_id})")
         print(f"  📄 SHA256: {final_pdf_hash}")
         print(f"  🌳 Merkle Root: {root_hash[:16]}...")
+        print(f"  🔐 Salt: {salt}")
         if metadata_embedded:
             print(f"  📎 Embedded verification data in PDF")
 

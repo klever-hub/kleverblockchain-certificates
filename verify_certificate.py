@@ -28,6 +28,7 @@ def list_certificates(metadata_file: str):
         print(f"  Holder: {name}")
         print(f"  Course: {course}")
         print(f"  Root Hash: {cert.get('rootHash', 'Unknown')[:16]}...")
+        print(f"  Salt: {cert.get('salt', 'None')}")
         print()
 
 def verify_field(metadata_file: str, field_name: str, field_value: str, nonce: int = None, nft_id: str = None):
@@ -74,8 +75,11 @@ def verify_field(metadata_file: str, field_name: str, field_value: str, nonce: i
             if not root_hash or not proof:
                 continue
             
+            # Get salt from certificate metadata
+            salt = cert.get('salt')
+            
             # Verify if this certificate actually has this field value
-            is_valid = verify_certificate_field(field_name, field_value, root_hash, proof)
+            is_valid = verify_certificate_field(field_name, field_value, root_hash, proof, salt)
             if is_valid:
                 matching_certs.append(cert)
         
@@ -101,8 +105,11 @@ def verify_field(metadata_file: str, field_name: str, field_value: str, nonce: i
             print(f"⚠️  No proof found for field '{field_name}' in certificate {cert.get('nft_id')}")
             continue
         
+        # Get salt from certificate metadata
+        salt = cert.get('salt')
+        
         # Verify using Merkle proof
-        is_valid = verify_certificate_field(field_name, field_value, root_hash, proof)
+        is_valid = verify_certificate_field(field_name, field_value, root_hash, proof, salt)
         
         if is_valid:
             verified_count += 1

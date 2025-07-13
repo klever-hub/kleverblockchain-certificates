@@ -285,6 +285,20 @@ python nft_manager.py transfer-all --id "KCERT25-A7B9"
 
 The system uses Merkle tree proofs for zero-knowledge verification of certificate fields.
 
+### Privacy Protection with Salt
+
+Each certificate includes a unique 16-character salt that is used when hashing certificate data. This provides:
+- **Rainbow table protection**: Pre-computed hashes cannot be used to identify certificates
+- **Privacy enhancement**: Same data produces different hashes for each certificate
+- **No correlation**: Cannot search blockchain for known name/course combinations
+
+The salt is:
+- Automatically generated for each certificate (16 characters, alphanumeric)
+- Displayed on the PDF certificate (formatted as XXXX-XXXX-XXXX-XXXX for readability)
+- Included in the verification URL as a query parameter
+- Stored in PDF metadata for automatic loading
+- Required for field verification
+
 ### PDF Metadata
 
 Certificates include embedded metadata in the PDF properties:
@@ -328,8 +342,9 @@ Example extracted data:
 ```json
 {
   "nft_id": "KCERT-V2YJ/1",
+  "salt": "ABCD1234WXYZ5678",
   "rootHash": "749644030a2d78e098f524ea2060256d542a401b8afa37fc950bf87d4dc54835",
-  "verify_url": "https://verify.kleverhub.io/KCERT-V2YJ/1",
+  "verify_url": "https://verify.kleverhub.io/KCERT-V2YJ/1?salt=ABCD1234WXYZ5678",
   "hash": "88807f995618fcb4252fe7c68d810263fc2a6a0a8045f39b224b241a9c564a3d",
   "certificate_data_raw": "name|Fernando Sobreira||course|Klever Blockchain: Construindo Smart Contracts na Prática||course_load|12 horas||location|Universidade de Fortaleza (UNIFOR)||date|Fortaleza, Julho de 2025||instructor|Nicollas Gabriel||instructor_title|Klever Blockchain Leader||issuer|Klever Blockchain Academy",
   "certificate_data": {
@@ -353,6 +368,8 @@ Note: PDF metadata embedding happens automatically during certificate generation
 ```bash
 python verify_certificate.py --list
 ```
+
+This will display each certificate's NFT ID, holder name, course, root hash, and salt.
 
 ### Verify Specific Field
 ```bash

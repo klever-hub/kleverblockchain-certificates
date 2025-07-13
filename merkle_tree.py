@@ -6,13 +6,17 @@ from typing import List, Dict, Optional, Tuple
 class MerkleTree:
     """Implementation of a Merkle tree for certificate metadata"""
     
-    def __init__(self):
+    def __init__(self, salt: str = None):
         self.leaves = []
         self.tree = []
         self.proofs = {}
+        self.salt = salt
     
     def hash_leaf(self, data: str) -> str:
         """Hash a leaf node with double SHA256"""
+        # Add salt if provided
+        if self.salt:
+            data = f"{self.salt}:{data}"
         # Double hash to prevent length extension attacks
         first_hash = hashlib.sha256(data.encode('utf-8')).digest()
         return hashlib.sha256(first_hash).hexdigest()
@@ -113,11 +117,15 @@ class MerkleTree:
         """Get the Merkle proof for a specific field"""
         return self.proofs.get(field_name)
     
-    def verify_proof(self, field_name: str, field_value: str, root_hash: str, proof: List[Dict]) -> bool:
+    def verify_proof(self, field_name: str, field_value: str, root_hash: str, proof: List[Dict], salt: str = None) -> bool:
         """Verify a Merkle proof"""
         # Calculate leaf hash
         leaf_data = f"{field_name}:{field_value}"
+        # Temporarily set salt for verification
+        old_salt = self.salt
+        self.salt = salt
         current_hash = self.hash_leaf(leaf_data)
+        self.salt = old_salt
         
         # Apply proof
         for proof_element in proof:
@@ -138,7 +146,9 @@ def create_certificate_merkle_tree(certificate_data: Dict) -> Tuple[str, Dict[st
     Create a Merkle tree for certificate data
     Returns: (root_hash, proofs_dict)
     """
-    tree = MerkleTree()
+    # Extract salt from certificate data
+    salt = certificate_data.get('salt')
+    tree = MerkleTree(salt=salt)
     
     # Add fields to the tree
     # Note: We're creating a tree of all metadata fields
@@ -170,9 +180,9 @@ def create_certificate_merkle_tree(certificate_data: Dict) -> Tuple[str, Dict[st
     return root_hash, proofs
 
 
-def verify_certificate_field(field_name: str, field_value: str, root_hash: str, proof: List[Dict]) -> bool:
+def verify_certificate_field(field_name: str, field_value: str, root_hash: str, proof: List[Dict], salt: str = None) -> bool:
     """
     Verify a single field against the Merkle root
     """
     tree = MerkleTree()
-    return tree.verify_proof(field_name, field_value, root_hash, proof)
+    return tree.verify_proof(field_name, field_value, root_hash, proof, salt)

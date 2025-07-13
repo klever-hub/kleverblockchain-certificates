@@ -14,6 +14,7 @@ TRANSLATIONS = {
         'issued_by': 'Certificate issued by',
         'verification': 'Verification:',
         'nft_id': 'NFT ID:',
+        'salt': 'Security Code:',
     },
     'pt': {
         'title': 'CERTIFICADO DE PARTICIPAÇÃO',
@@ -25,6 +26,7 @@ TRANSLATIONS = {
         'issued_by': 'Certificado emitido por',
         'verification': 'Verificação:',
         'nft_id': 'ID NFT:',
+        'salt': 'Código de Segurança:',
     },
     'es': {
         'title': 'CERTIFICADO DE PARTICIPACIÓN',
@@ -36,6 +38,7 @@ TRANSLATIONS = {
         'issued_by': 'Certificado emitido por',
         'verification': 'Verificación:',
         'nft_id': 'ID NFT:',
+        'salt': 'Código de Seguridad:',
     },
     'fr': {
         'title': 'CERTIFICAT DE PARTICIPATION',
@@ -47,6 +50,7 @@ TRANSLATIONS = {
         'issued_by': 'Certificat délivré par',
         'verification': 'Vérification :',
         'nft_id': 'ID NFT :',
+        'salt': 'Code de Sécurité :',
     }
 }
 
