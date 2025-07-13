@@ -8,7 +8,7 @@ Generate professional NFT certificates for Klever Blockchain courses.
 2. **Generate Certificates**: `python main.py --nft-id "MYCERT-XXXX"`
 3. **Mint NFTs**: `python nft_manager.py mint-all`
 4. **Update Metadata**: `python nft_manager.py update-all`
-5. **Transfer to Students**: `python nft_manager.py transfer-all`
+5. **Transfer to Participants**: `python nft_manager.py transfer-all`
 
 See the [Complete Workflow](#complete-workflow) section for detailed instructions.
 
@@ -37,8 +37,8 @@ cp .env.example .env
 # Edit .env with your values
 ```
 
-### 3. Prepare Student Data
-Create a `students.csv` file:
+### 3. Prepare Participant Data
+Create a `participants.csv` file:
 ```csv
 name,address
 João Silva,klv1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -89,7 +89,7 @@ python main.py \
 - `--network`: Network to use (mainnet/testnet) - default: testnet
 - `--nft-id`: NFT collection ID (format: TICKER-XXXX, e.g., KCERT-A7B9)
 - `--nft-starting-nonce`: First NFT number
-- `--students-csv`: Student data file
+- `--participants-csv`: Participant data file
 - `--output-dir`: Output directory
 
 ### Language Support
@@ -195,7 +195,7 @@ python nft_manager.py transfer --nonce 1 --address klv1xxxxxxxx
 python nft_manager.py transfer-all
 ```
 
-This reads the `students.csv` file and transfers NFTs to addresses specified in the CSV. Only students with valid Klever addresses will receive transfers.
+This reads the `participants.csv` file and transfers NFTs to addresses specified in the CSV. Only participants with valid Klever addresses will receive transfers.
 
 **Important**: Transfers should only be done AFTER metadata has been updated.
 
@@ -245,11 +245,11 @@ Now generate the certificates using the Collection ID from step 1:
 ```bash
 python main.py --nft-id "KCERT25-A7B9" \
   --course-name "Your Course Name" \
-  --students-csv "students.csv"
+  --participants-csv "participants.csv"
 ```
 
 This creates:
-- PDF certificates for each student
+- PDF certificates for each participant
 - `metadata.json` with verification data
 
 ### Step 3: Mint NFTs to Owner
@@ -270,7 +270,7 @@ python nft_manager.py update-all --id "KCERT25-A7B9"
 
 ### Step 5: Transfer NFTs to Recipients
 
-Finally, transfer the NFTs to the students:
+Finally, transfer the NFTs to the participants:
 
 ```bash
 python nft_manager.py transfer-all --id "KCERT25-A7B9"

@@ -30,7 +30,7 @@ API_URL = os.getenv("API_URL", API_URL)
 
 NFT_TICKER = os.getenv("NFT_TICKER", "KCERT")
 NFT_ID = os.getenv("NFT_ID", "KCERT-V2YJ")  # Default NFT ID, can be overridden
-STUDENTS_CSV = os.getenv("STUDENTS_CSV", "students.csv")
+PARTICIPANTS_CSV = os.getenv("PARTICIPANTS_CSV", "participants.csv")
 CERTIFICATES_DIR = os.getenv("OUTPUT_DIR", "certificates")
 
 # NFT Metadata
@@ -270,17 +270,17 @@ def update_metadata(nonce, metadata):
         return True
     return False
 
-def load_students_data():
-    """Load students data from CSV"""
-    students = []
-    if os.path.exists(STUDENTS_CSV):
-        with open(STUDENTS_CSV, 'r', encoding='utf-8') as f:
+def load_participants_data():
+    """Load participants data from CSV"""
+    participants = []
+    if os.path.exists(PARTICIPANTS_CSV):
+        with open(PARTICIPANTS_CSV, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                students.append(row)
+                participants.append(row)
     else:
-        print(f"⚠️ {STUDENTS_CSV} not found. Please ensure it has columns: name, address")
-    return students
+        print(f"⚠️ {PARTICIPANTS_CSV} not found. Please ensure it has columns: name, address")
+    return participants
 
 def load_metadata():
     """Load certificate metadata from JSON file"""
@@ -293,10 +293,10 @@ def load_metadata():
         return []
 
 def batch_mint_nfts():
-    """Mint NFTs for all students in the CSV"""
-    students = load_students_data()
-    if not students:
-        print("❌ No students found in CSV")
+    """Mint NFTs for all participants in the CSV"""
+    participants = load_participants_data()
+    if not participants:
+        print("❌ No participants found in CSV")
         return
     
     # Get the current minted value to determine starting nonce
@@ -305,32 +305,32 @@ def batch_mint_nfts():
         print("❌ Could not fetch collection info. Please check the collection exists.")
         return
     
-    print(f"\n🚀 Starting batch mint for {len(students)} students...")
+    print(f"\n🚀 Starting batch mint for {len(participants)} participants...")
     print(f"📊 Current collection state: {starting_nonce - 1} NFTs minted")
-    print(f"🔢 Will mint NFTs with nonces: {starting_nonce} to {starting_nonce + len(students) - 1}")
+    print(f"🔢 Will mint NFTs with nonces: {starting_nonce} to {starting_nonce + len(participants) - 1}")
     
     success_count = 0
-    for idx, student in enumerate(students):
+    for idx, participant in enumerate(participants):
         nonce = starting_nonce + idx
-        student_name = student.get('name', 'Unknown')
+        participant_name = participant.get('name', 'Unknown')
         
-        print(f"\n👤 Minting for {student_name} (nonce: {nonce})")
+        print(f"\n👤 Minting for {participant_name} (nonce: {nonce})")
         
         if mint_nft(nonce, skip_validation=False):
             success_count += 1
         else:
-            print(f"❌ Failed to mint NFT for {student_name}")
+            print(f"❌ Failed to mint NFT for {participant_name}")
             # If one fails, subsequent ones will likely fail too due to nonce mismatch
-            print(f"⚠️  Stopping batch mint. Successfully minted: {success_count}/{len(students)}")
+            print(f"⚠️  Stopping batch mint. Successfully minted: {success_count}/{len(participants)}")
             break
     
-    print(f"\n✅ Batch minting complete: {success_count}/{len(students)} successful")
+    print(f"\n✅ Batch minting complete: {success_count}/{len(participants)} successful")
 
 def batch_transfer_nfts():
-    """Transfer NFTs to recipients based on students CSV"""
-    students = load_students_data()
-    if not students:
-        print("❌ No students found in CSV")
+    """Transfer NFTs to recipients based on participants CSV"""
+    participants = load_participants_data()
+    if not participants:
+        print("❌ No participants found in CSV")
         return
     
     # Load metadata to get nonces
@@ -339,40 +339,40 @@ def batch_transfer_nfts():
         print("❌ No metadata found. Please generate certificates and update metadata first.")
         return
     
-    print(f"\n🚀 Starting batch transfer for {len(students)} students...")
+    print(f"\n🚀 Starting batch transfer for {len(participants)} participants...")
     
     success_count = 0
-    for student in students:
-        student_name = student.get('name', 'Unknown')
-        student_address = student.get('address', '').strip()
+    for participant in participants:
+        participant_name = participant.get('name', 'Unknown')
+        participant_address = participant.get('address', '').strip()
         
-        if not student_address or not student_address.startswith('klv'):
-            print(f"\n⚠️  Skipping {student_name} - no valid address provided")
+        if not participant_address or not participant_address.startswith('klv'):
+            print(f"\n⚠️  Skipping {participant_name} - no valid address provided")
             continue
         
         # Find the corresponding metadata entry by name
-        student_metadata = None
+        participant_metadata = None
         for meta in metadata:
             private_data = meta.get('_privateData', {})
-            if private_data.get('name') == student_name:
-                student_metadata = meta
+            if private_data.get('name') == participant_name:
+                participant_metadata = meta
                 break
         
-        if not student_metadata:
-            print(f"\n⚠️  No metadata found for {student_name}")
+        if not participant_metadata:
+            print(f"\n⚠️  No metadata found for {participant_name}")
             continue
         
-        nonce = student_metadata.get('nonce')
+        nonce = participant_metadata.get('nonce')
         nft_id = f"{NFT_ID}/{nonce}"
         
-        print(f"\n👤 Transferring NFT for {student_name}")
+        print(f"\n👤 Transferring NFT for {participant_name}")
         print(f"   📦 NFT: {nft_id}")
-        print(f"   📮 To: {student_address}")
+        print(f"   📮 To: {participant_address}")
         
-        if transfer_nft(nft_id, student_address):
+        if transfer_nft(nft_id, participant_address):
             success_count += 1
         else:
-            print(f"❌ Failed to transfer NFT for {student_name}")
+            print(f"❌ Failed to transfer NFT for {participant_name}")
     
     print(f"\n✅ Batch transfer complete: {success_count} NFTs transferred")
 
@@ -410,16 +410,16 @@ def batch_update_metadata():
         }
         metadata = json.dumps(json_metadata)
         
-        # Get student name for display
+        # Get participant name for display
         # Try to get from private data first, then fall back to direct field
         private_data = cert.get('_privateData', {})
-        student_name = private_data.get('name', cert.get('name', 'Unknown'))
+        participant_name = private_data.get('name', cert.get('name', 'Unknown'))
 
         if update_metadata(cert['nonce'], metadata):
             success_count += 1
-            print(f"  ✓ Updated metadata for {student_name} (NFT: {cert['nft_id']})")
+            print(f"  ✓ Updated metadata for {participant_name} (NFT: {cert['nft_id']})")
         else:
-            print(f"  ❌ Failed to update metadata for {student_name} (NFT: {cert['nft_id']})")
+            print(f"  ❌ Failed to update metadata for {participant_name} (NFT: {cert['nft_id']})")
     
     print(f"\n✅ Batch update complete: {success_count}/{len(certificates_metadata)} successful")
 

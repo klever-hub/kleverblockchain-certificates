@@ -47,8 +47,8 @@ parser.add_argument('--nft-id', default=os.getenv('NFT_ID', 'KCERT-ABCD'),
                     help='NFT collection ID')
 parser.add_argument('--nft-starting-nonce', type=int, default=int(os.getenv('NFT_STARTING_NONCE', '1')),
                     help='Starting nonce for NFT IDs')
-parser.add_argument('--students-csv', default=os.getenv('STUDENTS_CSV', 'students.csv'),
-                    help='Path to CSV file with student names')
+parser.add_argument('--participants-csv', default=os.getenv('PARTICIPANTS_CSV', 'participants.csv'),
+                    help='Path to CSV file with participant names')
 parser.add_argument('--output-dir', default=os.getenv('OUTPUT_DIR', 'certificates'),
                     help='Output directory for certificates')
 parser.add_argument('--language', default=os.getenv('LANGUAGE', 'en'),
@@ -80,7 +80,7 @@ PROFESSOR_TITLE = args.professor_title
 CERTIFICATE_ISSUER = args.certificate_issuer
 NFT_ID = args.nft_id
 NFT_STARTING_NONCE = args.nft_starting_nonce
-STUDENTS_CSV = args.students_csv
+PARTICIPANTS_CSV = args.participants_csv
 OUTPUT_DIR = args.output_dir
 LANGUAGE = args.language
 
@@ -95,21 +95,21 @@ UNIFOR_LOGO_PATH = "./images/unifor.png"
 KLEVER_LOGO_PATH = "./images/klever.png"
 BACKGROUND_PATH = "./images/background.png"
 
-# Load student names
-def load_students():
-    """Load students from CSV file if exists, otherwise use default list"""
-    if os.path.exists(STUDENTS_CSV):
-        students = []
-        with open(STUDENTS_CSV, 'r', encoding='utf-8') as f:
+# Load participant names
+def load_participants():
+    """Load participants from CSV file if exists, otherwise use default list"""
+    if os.path.exists(PARTICIPANTS_CSV):
+        participants = []
+        with open(PARTICIPANTS_CSV, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             next(reader, None)  # Skip header if exists
             for row in reader:
                 if row:  # Check if row is not empty
-                    students.append(row[0])
-        return students
+                    participants.append(row[0])
+        return participants
     else:
-        print(f"⚠️ Warning: {STUDENTS_CSV} not found!")
-        print("Please create a CSV file with student names or specify a different file with --students-csv")
+        print(f"⚠️ Warning: {PARTICIPANTS_CSV} not found!")
+        print("Please create a CSV file with participant names or specify a different file with --participants-csv")
         return []
 
 def generate_qr_code(data):
@@ -203,10 +203,10 @@ def hash_file(file_path):
         print(f"❌ Error hashing file {file_path}: {str(e)}")
         return None
 
-students = load_students()
+participants = load_participants()
 
-if not students:
-    print("\n❌ No students found. Exiting.")
+if not participants:
+    print("\n❌ No participants found. Exiting.")
     exit(1)
 
 # Output directory
@@ -216,8 +216,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 metadata_list = []
 
 # Generate certificates
-for idx, student in enumerate(students):
-    output_file = f"{OUTPUT_DIR}/{student.replace(' ', '_')}_certificate.pdf"
+for idx, name in enumerate(participants):
+    output_file = f"{OUTPUT_DIR}/{name.replace(' ', '_')}_certificate.pdf"
     c = canvas.Canvas(output_file, pagesize=landscape(A4))
     width, height = landscape(A4)
     
@@ -228,7 +228,7 @@ for idx, student in enumerate(students):
     verify_url = f"{VERIFY_BASE_URL}/{nft_id}?salt={salt}"
     
     # Set PDF metadata
-    c.setTitle(f"{get_translation(LANGUAGE, 'title')} - {student}")
+    c.setTitle(f"{get_translation(LANGUAGE, 'title')} - {name}")
     c.setAuthor(CERTIFICATE_ISSUER)
     c.setSubject(COURSE_NAME)
     c.setCreator("Klever Blockchain Certificate Generator")
@@ -274,10 +274,10 @@ for idx, student in enumerate(students):
     c.setFont("Helvetica", 20)
     c.drawCentredString(width / 2, text_y, get_translation(LANGUAGE, 'certify_that'))
     
-    # Student name with emphasis
+    # Participant name with emphasis
     c.setFont("Helvetica-Bold", 32)
-    c.setFillColor(HexColor('#1a237e'))  # Highlight student name
-    c.drawCentredString(width / 2, text_y - 45, student.upper())
+    c.setFillColor(HexColor('#1a237e'))  # Highlight participant name
+    c.drawCentredString(width / 2, text_y - 45, name.upper())
     
     # Reset to black
     c.setFillColor(HexColor('#000000'))
@@ -379,7 +379,7 @@ for idx, student in enumerate(students):
         "nonce": nft_nonce,
         "nft_id": nft_id,
         "salt": salt,  # Include salt in the data to be hashed
-        "name": student,
+        "name": name,
         # Note: pdf_hash is excluded from Merkle tree
         "course": COURSE_NAME,
         "course_load": COURSE_LOAD,
@@ -405,7 +405,7 @@ for idx, student in enumerate(students):
         **proofs,
         # Include the actual values
         "_privateData": {
-            "name": student,
+            "name": name,
             "course": COURSE_NAME,
             "course_load": COURSE_LOAD,
             "location": LOCATION,
@@ -441,7 +441,7 @@ for idx, student in enumerate(students):
             **proofs,
             # Include the actual values
             "_privateData": {
-                "name": student,
+                "name": name,
                 "course": COURSE_NAME,
                 "course_load": COURSE_LOAD,
                 "location": LOCATION,
@@ -453,24 +453,24 @@ for idx, student in enumerate(students):
         }
         
         metadata_list.append(cert_metadata)
-        print(f"✓ Certificate generated for {student}: {output_file} (NFT: {nft_id})")
+        print(f"✓ Certificate generated for {name}: {output_file} (NFT: {nft_id})")
         print(f"  📄 SHA256: {final_pdf_hash}")
         print(f"  🌳 Merkle Root: {root_hash[:16]}...")
         print(f"  🔐 Salt: {salt}")
         if metadata_embedded:
             print(f"  📎 Embedded verification data in PDF")
 
-# Create sample students.csv if it doesn't exist
-if not os.path.exists(STUDENTS_CSV):
-    with open(STUDENTS_CSV, "w", encoding='utf-8') as f:
+# Create sample participants.csv if it doesn't exist
+if not os.path.exists(PARTICIPANTS_CSV):
+    with open(PARTICIPANTS_CSV, "w", encoding='utf-8') as f:
         f.write("name\n")
         f.write("Fernando Sobreira\n")
         f.write("João Beroni\n")
-    print(f"\n📝 Created {STUDENTS_CSV} - Add more students to this file and run again!")
+    print(f"\n📝 Created {PARTICIPANTS_CSV} - Add more participants to this file and run again!")
 
-print(f"\n✅ Generated {len(students)} certificates successfully!")
+print(f"\n✅ Generated {len(participants)} certificates successfully!")
 print(f"📦 NFT Collection: {NFT_ID}")
-print(f"🔢 NFT Range: {NFT_ID}/{NFT_STARTING_NONCE} to {NFT_ID}/{NFT_STARTING_NONCE + len(students) - 1}")
+print(f"🔢 NFT Range: {NFT_ID}/{NFT_STARTING_NONCE} to {NFT_ID}/{NFT_STARTING_NONCE + len(participants) - 1}")
 
 # Save metadata to JSON file
 metadata_file = f"{OUTPUT_DIR}/metadata.json"
@@ -490,5 +490,5 @@ print(f"   Language: {LANGUAGE}")
 print(f"   Network: {NETWORK}")
 print(f"   Verify URL: {VERIFY_BASE_URL}")
 print(f"   NFT ID: {NFT_ID}")
-print(f"   Students CSV: {STUDENTS_CSV}")
+print(f"   Participants CSV: {PARTICIPANTS_CSV}")
 print(f"   Output: {OUTPUT_DIR}/")
