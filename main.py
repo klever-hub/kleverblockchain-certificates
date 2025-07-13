@@ -45,6 +45,9 @@ parser.add_argument('--output-dir', default=os.getenv('OUTPUT_DIR', 'certificate
 parser.add_argument('--language', default=os.getenv('LANGUAGE', 'en'),
                     choices=get_available_languages(),
                     help='Language for certificate text (default: en)')
+parser.add_argument('--network', default=os.getenv('NETWORK', 'testnet'),
+                    choices=['mainnet', 'testnet'],
+                    help='Network to use (mainnet/testnet) - default: testnet')
 
 args = parser.parse_args()
 
@@ -71,6 +74,12 @@ NFT_STARTING_NONCE = args.nft_starting_nonce
 STUDENTS_CSV = args.students_csv
 OUTPUT_DIR = args.output_dir
 LANGUAGE = args.language
+
+# Determine network (testnet or mainnet)
+NETWORK = args.network
+
+# Set verify URL based on network
+VERIFY_BASE_URL = 'https://verify.stg.kleverhub.io' if NETWORK == 'testnet' else 'https://verify.kleverhub.io'
 
 # Fixed paths for logos and background
 UNIFOR_LOGO_PATH = "./images/unifor.png"
@@ -206,7 +215,7 @@ for idx, student in enumerate(students):
     # Calculate NFT ID
     nft_nonce = NFT_STARTING_NONCE + idx
     nft_id = f"{NFT_ID}/{nft_nonce}"
-    verify_url = f"https://verify.kleverhub.io/{nft_id}"
+    verify_url = f"{VERIFY_BASE_URL}/{nft_id}"
     
     # Set PDF metadata
     c.setTitle(f"{get_translation(LANGUAGE, 'title')} - {student}")
@@ -451,6 +460,8 @@ print(f"   Date: {LOCATION_DATE}")
 print(f"   Instructor: {PROFESSOR_NAME} ({PROFESSOR_TITLE})")
 print(f"   Issuer: {CERTIFICATE_ISSUER}")
 print(f"   Language: {LANGUAGE}")
+print(f"   Network: {NETWORK}")
+print(f"   Verify URL: {VERIFY_BASE_URL}")
 print(f"   NFT ID: {NFT_ID}")
 print(f"   Students CSV: {STUDENTS_CSV}")
 print(f"   Output: {OUTPUT_DIR}/")

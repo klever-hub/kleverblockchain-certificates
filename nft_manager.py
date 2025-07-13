@@ -14,8 +14,20 @@ load_dotenv()
 # Configuration
 KOPERATOR_PATH = os.path.expanduser("~/klever-sdk/koperator")
 WALLET_KEY = os.getenv("WALLET_KEY_FILE", "./walletKey.pem")
-NODE_URL = os.getenv("NODE_URL", "https://node.testnet.klever.org")
-API_URL = os.getenv("API_URL", "https://api.testnet.klever.org")
+
+# Network configuration
+NETWORK = os.getenv("NETWORK", "testnet")
+if NETWORK == "mainnet":
+    NODE_URL = "https://node.klever.org"
+    API_URL = "https://api.klever.org"
+else:  # Default to testnet
+    NODE_URL = "https://node.testnet.klever.org"
+    API_URL = "https://api.testnet.klever.org"
+
+# Allow override if specific URLs are provided
+NODE_URL = os.getenv("NODE_URL", NODE_URL)
+API_URL = os.getenv("API_URL", API_URL)
+
 NFT_TICKER = os.getenv("NFT_TICKER", "KCERT")
 NFT_ID = os.getenv("NFT_ID", "KCERT-V2YJ")  # Default NFT ID, can be overridden
 STUDENTS_CSV = os.getenv("STUDENTS_CSV", "students.csv")
@@ -397,7 +409,7 @@ def check_collection_status():
         print(f"\n✅ Next available nonce: {next_nonce}")
 
 def main():
-    global WALLET_KEY, NODE_URL, API_URL, NFT_TICKER, NFT_ID
+    global WALLET_KEY, NODE_URL, API_URL, NFT_TICKER, NFT_ID, NETWORK
     
     parser = argparse.ArgumentParser(description='Klever NFT Certificate Manager')
     parser.add_argument('action', choices=['status', 'create', 'mint', 'mint-all', 'transfer', 'transfer-all', 'update', 'update-all'],
@@ -405,20 +417,42 @@ def main():
     parser.add_argument('--nonce', type=int, help='NFT nonce (for single mint/update)')
     parser.add_argument('--address', help='Recipient address (for single mint)')
     parser.add_argument('--key-file', default=WALLET_KEY, help='Path to wallet key file')
-    parser.add_argument('--node', default=NODE_URL, help='Klever node URL')
-    parser.add_argument('--api', default=API_URL, help='Klever API URL')
+    parser.add_argument('--network', choices=['mainnet', 'testnet'], default=NETWORK,
+                        help='Network to use (mainnet/testnet)')
+    parser.add_argument('--node', help='Override Klever node URL')
+    parser.add_argument('--api', help='Override Klever API URL')
     parser.add_argument('--ticker', default=NFT_TICKER, help='NFT collection ticker')
     parser.add_argument('--id', default=NFT_ID, help='NFT collection ID')
     
     args = parser.parse_args()
     
-    # Update global variables if provided
+    # Update network URLs based on network flag
+    if args.network:
+        NETWORK = args.network
+        if NETWORK == "mainnet":
+            NODE_URL = "https://node.klever.org"
+            API_URL = "https://api.klever.org"
+        else:  # testnet
+            NODE_URL = "https://node.testnet.klever.org"
+            API_URL = "https://api.testnet.klever.org"
+    
+    # Allow override with specific URLs if provided
+    if args.node:
+        NODE_URL = args.node
+    if args.api:
+        API_URL = args.api
+    
+    # Update other global variables
     WALLET_KEY = args.key_file
-    NODE_URL = args.node
-    API_URL = args.api
     NFT_TICKER = args.ticker
     NFT_ID = args.id
 
+    # Show network configuration
+    print(f"🌐 Using {NETWORK} network")
+    print(f"   Node: {NODE_URL}")
+    print(f"   API: {API_URL}")
+    print()
+    
     # Check if koperator exists
     if not os.path.exists(KOPERATOR_PATH):
         print(f"❌ Koperator not found at {KOPERATOR_PATH}")

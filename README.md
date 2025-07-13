@@ -76,6 +76,7 @@ python main.py \
 - `--professor-title`: Instructor title
 - `--certificate-issuer`: Organization issuing the certificate
 - `--language`: Certificate language (en, pt, es, fr) - default: en
+- `--network`: Network to use (mainnet/testnet) - default: testnet
 - `--nft-ticker`: NFT collection ID
 - `--nft-starting-nonce`: First NFT number
 - `--students-csv`: Student data file
@@ -98,6 +99,26 @@ python main.py --language es
 # French
 python main.py --language fr
 ```
+
+### Network Configuration
+
+The certificate generator supports both mainnet and testnet:
+
+```bash
+# Use testnet (default)
+python main.py --network testnet
+
+# Use mainnet
+python main.py --network mainnet
+```
+
+The network flag determines:
+- Which verification URL to use:
+  - Testnet: `https://verify.stg.kleverhub.io`
+  - Mainnet: `https://verify.kleverhub.io`
+- Which blockchain endpoints the NFT manager uses:
+  - Testnet: `https://node.testnet.klever.org` and `https://api.testnet.klever.org`
+  - Mainnet: `https://node.klever.org` and `https://api.klever.org`
 
 ## NFT Management
 
@@ -170,10 +191,11 @@ This reads the `students.csv` file and transfers NFTs to addresses specified in 
 
 ### NFT Manager Options
 - `--key-file`: Path to wallet key (default: `./walletKey.pem`)
-- `--node`: Klever node URL (default: testnet)
-- `--api`: Klever API URL (default: testnet API)
+- `--network`: Network to use (mainnet/testnet) - default: testnet
 - `--ticker`: NFT collection ticker
 - `--id`: NFT collection ID
+- `--node`: Override node URL (optional)
+- `--api`: Override API URL (optional)
 
 ## Workflow Example
 
