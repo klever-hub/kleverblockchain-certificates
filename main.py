@@ -203,6 +203,63 @@ def hash_file(file_path):
         print(f"❌ Error hashing file {file_path}: {str(e)}")
         return None
 
+def calculate_font_size(text, base_font_size, max_width, c, font_name="Helvetica"):
+    """Calculate optimal font size to fit text within max_width"""
+    font_size = base_font_size
+    min_font_size = 12  # Minimum readable font size
+    
+    # Try different font sizes until text fits
+    while font_size >= min_font_size:
+        c.setFont(font_name, font_size)
+        text_width = c.stringWidth(text, font_name, font_size)
+        if text_width <= max_width:
+            return font_size
+        font_size -= 1
+    
+    return min_font_size
+
+def get_text_metrics(c, text, font_name, font_size):
+    """Get the width of text with given font and size"""
+    return c.stringWidth(text, font_name, font_size)
+
+def wrap_text(text, max_width, c, font_name, font_size):
+    """Wrap text to fit within max_width, returning list of lines"""
+    words = text.split()
+    lines = []
+    current_line = []
+    
+    c.setFont(font_name, font_size)
+    
+    for word in words:
+        test_line = ' '.join(current_line + [word])
+        if c.stringWidth(test_line, font_name, font_size) <= max_width:
+            current_line.append(word)
+        else:
+            if current_line:
+                lines.append(' '.join(current_line))
+                current_line = [word]
+            else:
+                # Word is too long, add it anyway
+                lines.append(word)
+    
+    if current_line:
+        lines.append(' '.join(current_line))
+    
+    return lines
+
+def draw_centered_multiline_text(c, x, y, lines, font_name, font_size, line_spacing=1.2):
+    """Draw multiple lines of text centered at x, starting from y"""
+    c.setFont(font_name, font_size)
+    line_height = font_size * line_spacing
+    
+    # Adjust starting y to center the block vertically
+    total_height = len(lines) * line_height
+    current_y = y + (total_height / 2) - line_height
+    
+    for line in lines:
+        c.drawCentredString(x, current_y, line)
+        current_y -= line_height
+
 participants = load_participants()
 
 if not participants:
@@ -270,14 +327,22 @@ for idx, name in enumerate(participants):
     # Main content with inline text
     text_y = height / 2 + 90
     
+    # Define margins and usable width
+    left_margin = 80
+    right_margin = 80
+    usable_width = width - left_margin - right_margin
+    
     # First line: "We certify that"
     c.setFont("Helvetica", 20)
     c.drawCentredString(width / 2, text_y, get_translation(LANGUAGE, 'certify_that'))
     
-    # Participant name with emphasis
-    c.setFont("Helvetica-Bold", 32)
+    # Participant name with emphasis - dynamic font size
+    name_upper = name.upper()
+    name_font_size = calculate_font_size(name_upper, 32, usable_width * 0.9, c, "Helvetica-Bold")
+    
+    c.setFont("Helvetica-Bold", name_font_size)
     c.setFillColor(HexColor('#1a237e'))  # Highlight participant name
-    c.drawCentredString(width / 2, text_y - 45, name.upper())
+    c.drawCentredString(width / 2, text_y - 45, name_upper)
     
     # Reset to black
     c.setFillColor(HexColor('#000000'))
@@ -286,19 +351,36 @@ for idx, name in enumerate(participants):
     c.setFont("Helvetica", 18)
     c.drawCentredString(width / 2, text_y - 80, get_translation(LANGUAGE, 'participated_in'))
     
-    # Course name with emphasis
+    # Course name with emphasis - use wrapping for long names
     c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(width / 2, text_y - 110, COURSE_NAME)
+    course_lines = wrap_text(COURSE_NAME, usable_width * 0.85, c, "Helvetica-Bold", 20)
+    course_y = text_y - 110
+    if len(course_lines) == 1:
+        c.drawCentredString(width / 2, course_y, COURSE_NAME)
+    else:
+        draw_centered_multiline_text(c, width / 2, course_y, course_lines, "Helvetica-Bold", 20, line_spacing=1.1)
+        # Adjust next element position if multiple lines
+        course_y -= (len(course_lines) - 1) * 20 * 1.1
     
-    # Event details
-    c.setFont("Helvetica", 16)
+    # Event details - use wrapping for long location
     held_at = get_translation(LANGUAGE, 'held_at')
     with_duration = get_translation(LANGUAGE, 'with_duration')
-    c.drawCentredString(width / 2, text_y - 135, f"{held_at} {LOCATION}, {with_duration} {COURSE_LOAD},")
+    location_line = f"{held_at} {LOCATION}, {with_duration} {COURSE_LOAD},"
+    c.setFont("Helvetica", 16)
+    location_lines = wrap_text(location_line, usable_width * 0.9, c, "Helvetica", 16)
+    location_y = course_y - 25
+    if len(location_lines) == 1:
+        c.drawCentredString(width / 2, location_y, location_line)
+    else:
+        draw_centered_multiline_text(c, width / 2, location_y, location_lines, "Helvetica", 16)
+        # Adjust next element position if multiple lines
+        location_y -= (len(location_lines) - 1) * 16 * 1.2
     
     # Date line
     date_text = get_translation(LANGUAGE, 'date_format').replace('{date}', LOCATION_DATE)
-    c.drawCentredString(width / 2, text_y - 160, f"{date_text}.")
+    date_line = f"{date_text}."
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(width / 2, location_y - 25, date_line)
     
     # Signature section
     signature_y = 155
