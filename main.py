@@ -91,7 +91,7 @@ NETWORK = args.network
 VERIFY_BASE_URL = 'https://verify.stg.kleverhub.io' if NETWORK == 'testnet' else 'https://verify.kleverhub.io'
 
 # Fixed paths for logos and background
-UNIFOR_LOGO_PATH = "./images/unifor.png"
+PARTNER_LOGO_PATH = os.getenv('PARTNER_LOGO_PATH', './images/partner.png')
 KLEVER_LOGO_PATH = "./images/klever.png"
 BACKGROUND_PATH = "./images/background.png"
 
@@ -306,15 +306,21 @@ for idx, name in enumerate(participants):
     logo_y = height - 200
     logo_spacing = 300  # Space between logos
     
-    # Calculate positions to center the logos as a group
-    left_logo_x = width / 2 - logo_spacing / 2 - logo_size / 2
-    right_logo_x = width / 2 + logo_spacing / 2 - logo_size / 2
+    # Check if partner logo exists
+    partner_logo_exists = os.path.exists(PARTNER_LOGO_PATH)
+    klever_logo_exists = os.path.exists(KLEVER_LOGO_PATH)
     
-    if os.path.exists(UNIFOR_LOGO_PATH):
-        c.drawImage(UNIFOR_LOGO_PATH, left_logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto')
-    
-    if os.path.exists(KLEVER_LOGO_PATH):
+    if partner_logo_exists and klever_logo_exists:
+        # Both logos present - position them side by side
+        left_logo_x = width / 2 - logo_spacing / 2 - logo_size / 2
+        right_logo_x = width / 2 + logo_spacing / 2 - logo_size / 2
+        
+        c.drawImage(PARTNER_LOGO_PATH, left_logo_x, logo_y, width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto')
         c.drawImage(KLEVER_LOGO_PATH, right_logo_x, logo_y, width=logo_size + 10, height=logo_size + 10, preserveAspectRatio=True, mask='auto')
+    elif klever_logo_exists:
+        # Only Klever logo - center it
+        center_logo_x = width / 2 - (logo_size + 10) / 2
+        c.drawImage(KLEVER_LOGO_PATH, center_logo_x, logo_y, width=logo_size + 10, height=logo_size + 10, preserveAspectRatio=True, mask='auto')
     
     # Title with better spacing
     c.setFont("Helvetica-Bold", 42)
