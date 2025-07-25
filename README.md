@@ -128,7 +128,7 @@ The network flag determines:
   - Mainnet: `https://verify.kleverhub.io`
 - Which blockchain endpoints the NFT manager uses:
   - Testnet: `https://node.testnet.klever.org` and `https://api.testnet.klever.org`
-  - Mainnet: `https://node.klever.org` and `https://api.klever.org`
+  - Mainnet: `https://node.mainnet.klever.org` and `https://api.mainnet.klever.org`
 
 ## NFT Management
 
@@ -148,9 +148,32 @@ This shows:
 - Collection properties and limits
 
 ### 2. Create NFT Collection
+
 ```bash
+# Basic creation with default verification URI
 python nft_manager.py create
+
+# With custom URIs
+python nft_manager.py create --uris "website=academy.klever.org,verification=verify.kleverhub.io"
+
+# With multiple URIs
+python nft_manager.py create --uris "website=academy.klever.org,verification=verify.kleverhub.io,docs=docs.klever.org"
 ```
+
+#### Collection URIs
+
+NFT collections can have multiple URIs associated with them for different purposes. URIs are specified in the format `key=value,key2=value2`.
+
+**Recommended URI handles:**
+- `website` - Main website or academy portal
+- `verification` - Certificate verification endpoint (default: verify.kleverhub.io)
+- `docs` - Documentation site
+- `api` - API endpoints
+- `explorer` - Blockchain explorer
+- `metadata` - Metadata service endpoint
+- `support` - Support portal
+
+If no URIs are specified, the collection will have a default `verification` URI pointing to the configured verification service.
 
 ### 3. Mint NFTs
 
@@ -219,6 +242,9 @@ export NFT_TICKER="KCERT25"
 
 # Create the NFT collection
 python nft_manager.py create --ticker $NFT_TICKER
+
+# Or with custom URIs
+python nft_manager.py create --ticker $NFT_TICKER --uris "website=academy.klever.org,verification=verify.kleverhub.io"
 ```
 
 This will output something like:

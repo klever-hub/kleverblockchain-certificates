@@ -18,8 +18,8 @@ WALLET_KEY = os.getenv("WALLET_KEY_FILE", "./walletKey.pem")
 # Network configuration
 NETWORK = os.getenv("NETWORK", "testnet")
 if NETWORK == "mainnet":
-    NODE_URL = "https://node.klever.org"
-    API_URL = "https://api.klever.org"
+    NODE_URL = "https://node.mainnet.klever.org"
+    API_URL = "https://api.mainnet.klever.org"
 else:  # Default to testnet
     NODE_URL = "https://node.testnet.klever.org"
     API_URL = "https://api.testnet.klever.org"
@@ -34,9 +34,10 @@ PARTICIPANTS_CSV = os.getenv("PARTICIPANTS_CSV", "participants.csv")
 CERTIFICATES_DIR = os.getenv("OUTPUT_DIR", "certificates")
 
 # NFT Metadata
-NFT_NAME = os.getenv("NFT_NAME", "KleverBlockchainCertificate")
+NFT_NAME = os.getenv("NFT_NAME", "KleverAcademyCertificate")
 NFT_LOGO = os.getenv("NFT_LOGO", "https://raw.githubusercontent.com/klever-hub/kleverblockchain-certificates/refs/heads/main/images/nftc.png")
 NFT_MAX_SUPPLY = int(os.getenv("NFT_MAX_SUPPLY", "0"))
+DEFAULT_VERIFY_URI = os.getenv("DEFAULT_VERIFY_URI", "verify.kleverhub.io")
 
 def run_command(cmd):
     """Execute a command and return the output"""
@@ -118,9 +119,38 @@ def get_next_nonce():
         return minted_value + 1
     return None
 
-def create_nft_collection():
-    """Create the NFT collection"""
+def create_nft_collection(uris=None):
+    """Create the NFT collection
+    
+    Args:
+        uris: Collection URIs in format: key1=value1,key2=value2
+              Recommended handles:
+              - website: Main website or academy portal
+              - verification: Certificate verification endpoint
+              - docs: Documentation site
+              - api: API endpoints
+              - explorer: Blockchain explorer
+              - metadata: Metadata service endpoint
+              - support: Support portal
+    """
     print(f"\n🎨 Creating NFT Collection: {NFT_TICKER}")
+    
+    # Parse URIs if provided
+    if uris:
+        # Parse format: "website=academy.klever.org,verification=verify.kleverhub.io"
+        uri_list = []
+        for uri_pair in uris.split(','):
+            if '=' in uri_pair:
+                key, value = uri_pair.strip().split('=', 1)
+                uri_list.append(f"{key}={value}")
+            else:
+                # If no key provided, use the value as is
+                uri_list.append(uri_pair.strip())
+    else:
+        # Use default verification URI if none provided
+        uri_list = [f"verification={DEFAULT_VERIFY_URI}"]
+    
+    print(f"   URIs: {', '.join(uri_list)}")
     
     cmd = [
         KOPERATOR_PATH, "kda", "create", "1",  # 1 for NFT
@@ -136,6 +166,10 @@ def create_nft_collection():
         "--result-only",
         "-s"  # auto sign
     ]
+    
+    # Add URIs to the command
+    for uri in uri_list:
+        cmd.extend(["--uris", uri])
     
     # Add maxSupply only if it's greater than 0
     if NFT_MAX_SUPPLY > 0:
@@ -468,6 +502,8 @@ def main():
     parser.add_argument('--api', help='Override Klever API URL')
     parser.add_argument('--ticker', default=NFT_TICKER, help='NFT collection ticker')
     parser.add_argument('--id', default=NFT_ID, help='NFT collection ID')
+    parser.add_argument('--uris', help='Collection URIs in format: key1=value1,key2=value2 (e.g., website=academy.klever.org,verification=verify.kleverhub.io). '
+                                       'Recommended handles: website, verification, docs, api, explorer, metadata, support')
     
     args = parser.parse_args()
     
@@ -475,8 +511,8 @@ def main():
     if args.network:
         NETWORK = args.network
         if NETWORK == "mainnet":
-            NODE_URL = "https://node.klever.org"
-            API_URL = "https://api.klever.org"
+            NODE_URL = "https://node.mainnet.klever.org"
+            API_URL = "https://api.mainnet.klever.org"
         else:  # testnet
             NODE_URL = "https://node.testnet.klever.org"
             API_URL = "https://api.testnet.klever.org"
@@ -519,7 +555,7 @@ def main():
         check_collection_status()
     
     elif args.action == 'create':
-        create_nft_collection()
+        create_nft_collection(uris=args.uris)
     
     elif args.action == 'mint':
         if not args.nonce:
