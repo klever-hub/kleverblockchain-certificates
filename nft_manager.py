@@ -4,6 +4,7 @@ import os
 import subprocess
 import argparse
 import sys
+import time
 from dotenv import load_dotenv
 import csv
 import requests
@@ -250,7 +251,7 @@ def mint_nft(nonce, skip_validation=False):
     ]
     result = run_command(cmd)
     if result:
-        print(f"✅ NFT {NFT_TICKER}/{nonce} minted successfully to {owner_address}!")
+        print(f"✅ NFT {NFT_ID}/{nonce} minted successfully to {owner_address}!")
         return True
     return False
 
@@ -341,12 +342,18 @@ def batch_mint_nfts():
     
     print(f"\n🚀 Starting batch mint for {len(participants)} participants...")
     print(f"📊 Current collection state: {starting_nonce - 1} NFTs minted")
-    print(f"🔢 Will mint NFTs with nonces: {starting_nonce} to {starting_nonce + len(participants) - 1}")
+    print(f"🔢 Will mint NFTs with nonces: {starting_nonce} to {len(participants)}")
     
-    success_count = 0
+    success_count = starting_nonce - 1
     for idx, participant in enumerate(participants):
-        nonce = starting_nonce + idx
+        nonce = idx + 1  # Nonce starts from 1
         participant_name = participant.get('name', 'Unknown')
+
+        # skip until we reach the starting nonce
+        if idx < starting_nonce - 1:
+            print(f"⚠️  Skipping {participant_name} - already minted {nonce} up to nonce {starting_nonce - 1}")
+            continue
+
         
         print(f"\n👤 Minting for {participant_name} (nonce: {nonce})")
         
@@ -357,6 +364,10 @@ def batch_mint_nfts():
             # If one fails, subsequent ones will likely fail too due to nonce mismatch
             print(f"⚠️  Stopping batch mint. Successfully minted: {success_count}/{len(participants)}")
             break
+        
+        # delay to avoid rate limiting && last mint to reflect the new nonce
+        if idx < len(participants) - 1:
+            time.sleep(2)
     
     print(f"\n✅ Batch minting complete: {success_count}/{len(participants)} successful")
 
