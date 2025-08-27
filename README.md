@@ -4,7 +4,11 @@ Generate professional NFT certificates for Klever Blockchain courses.
 
 ## Quick Start
 
+0. **CONFIG**:
+   1. Make sure to have you `.env` file  with correct `NETWORK`, `WALLET_KEY_FILE`, and NFT INFO
+   2. Load your python venv - `source venv/bin/activate` or create one 
 1. **Create NFT Collection**: `python nft_manager.py create --ticker MYCERT`
+   1. Make sure to update you `.env` file with the ID created `section NFT Configuration`
 2. **Generate Certificates**: `python main.py --nft-id "MYCERT-XXXX"`
 3. **Mint NFTs**: `python nft_manager.py mint-all`
 4. **Update Metadata**: `python nft_manager.py update-all`

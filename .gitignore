@@ -26,3 +26,5 @@ Thumbs.db
 
 # Project specific
 participants.csv
+certificates-*
+*.txt

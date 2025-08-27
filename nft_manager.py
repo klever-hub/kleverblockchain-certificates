@@ -260,10 +260,9 @@ def transfer_nft(nft_id, to_address):
     print(f"\n📤 Transferring NFT {nft_id} to {to_address}")
     
     cmd = [
-        KOPERATOR_PATH, "send", 
+        KOPERATOR_PATH,
+        "account", "send", to_address, "1",
         "--kda", nft_id,
-        "--kdaAmount", "1",
-        "--to", to_address,
         "--key-file", WALLET_KEY,
         "--node", NODE_URL,
         "--await",
@@ -410,14 +409,14 @@ def batch_transfer_nfts():
         nonce = participant_metadata.get('nonce')
         nft_id = f"{NFT_ID}/{nonce}"
         
-        print(f"\n👤 Transferring NFT for {participant_name}")
+        print(f"\n👤 Transferring NFT to {participant_name}")
         print(f"   📦 NFT: {nft_id}")
-        print(f"   📮 To: {participant_address}")
+        print(f"   📮 Wallet: {participant_address}")
         
         if transfer_nft(nft_id, participant_address):
             success_count += 1
         else:
-            print(f"❌ Failed to transfer NFT for {participant_name}")
+            print(f"❌ Failed to transfer NFT to {participant_name}")
     
     print(f"\n✅ Batch transfer complete: {success_count} NFTs transferred")
 
